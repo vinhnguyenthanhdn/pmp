@@ -150,6 +150,15 @@ CREATE POLICY "Service role can manage PMP app settings"
 -- FUNCTIONS & TRIGGERS
 -- =====================================================
 
+-- Function to update 'updated_at' timestamp
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 -- Triggers for auto-updating 'updated_at' on PMP tables
 DROP TRIGGER IF EXISTS update_pmp_questions_updated_at ON pmp_questions;
 CREATE TRIGGER update_pmp_questions_updated_at

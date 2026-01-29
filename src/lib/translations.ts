@@ -73,12 +73,12 @@ const translations: Translations = {
         en: '⏳ Analyzing PMP question...',
     },
     ai_explanation: {
-        vi: '🤖 Giải thích AI',
-        en: '🤖 AI Explanation',
+        vi: '💡 Giải Thích',
+        en: '💡 Explanation',
     },
     ai_theory: {
-        vi: '📚 Lý thuyết AI',
-        en: '📚 AI Theory',
+        vi: '📚 Cơ Sở Lý Thuyết',
+        en: '📚 Theoretical Foundation',
     },
     jump_to_question: {
         vi: 'Câu số',

@@ -10,7 +10,7 @@ export const Footer: React.FC = () => {
                         Made with ❤️ for PMI PMP Certification Aspirants
                     </p>
                     <p className="footer-contact">
-                        📧 Contact: <a href="mailto:vinh.nguyenthanhdn@gmail.com">vinh.nguyenthanhdn@gmail.com</a>
+                        📧 Contact: <a href="mailto:haobv@fpt.com">haobv@fpt.com</a>
                     </p>
                 </div>
             </div>
