@@ -385,11 +385,10 @@ function App() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     };
-
     if (loading) {
         return (
             <div className="app">
-                <Loading message="Initializing AWS Cloud Learning Environment..." />
+                <Loading message="Setting up your PMP Exam Preparation..." />
             </div>
         );
     }

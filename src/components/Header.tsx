@@ -57,11 +57,11 @@ export const Header: React.FC<HeaderProps> = ({
                         onLanguageChange={onLanguageChange}
                     />
                     <h1 className="app-title">
-                        <span className="title-icon">☁️</span>
-                        AWS SAA-C03 Quiz
+                        <span className="title-icon">🎯</span>
+                        PMP Exam Master
                     </h1>
                     <p className="app-subtitle">
-                        Master your AWS Solutions Architect Associate Certification
+                        Pass the PMI Project Management Professional Exam
                     </p>
                 </div>
             </div>

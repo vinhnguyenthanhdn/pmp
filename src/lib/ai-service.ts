@@ -245,7 +245,7 @@ Provide tips and tricks to apply to similar questions.
 
 IMPORTANT: When mentioning keywords or concepts in content, write them in **bold** withOUT colons (:) after. Example: **Keyword** NOT **Keyword:**`;
 
-    const prompt = `You are an AWS Solutions Architect expert. Analyze this SAA-C03 exam question.
+    const prompt = `You are a Project Management Professional (PMP) expert. Analyze this PMP exam question based on the PMBOK Guide and PMI standards.
 
 Question: ${question}
 
@@ -299,7 +299,7 @@ export async function getAITheory(
     const promptStructure = language === 'vi'
         ? `## Cơ sở lý thuyết các thuật ngữ trong câu hỏi
 
-Liệt kê và giải thích TẤT CẢ các AWS services, concepts, và thuật ngữ kỹ thuật được đề cập trong câu hỏi.
+Liệt kê và giải thích TẤT CẢ các PMP concepts, processes, và thuật ngữ kỹ thuật được đề cập trong câu hỏi.
 
 Định dạng cho mỗi thuật ngữ:
 - **Tên thuật ngữ** (in đậm, không có dấu hai chấm)
@@ -307,7 +307,7 @@ Liệt kê và giải thích TẤT CẢ các AWS services, concepts, và thuật
 
 ## Cơ sở lý thuyết các thuật ngữ trong đáp án
 
-Liệt kê và giải thích TẤT CẢ các AWS services, concepts, và thuật ngữ kỹ thuật xuất hiện trong các đáp án (A, B, C, D).
+Liệt kê và giải thích TẤT CẢ các PMP concepts, processes, và thuật ngữ kỹ thuật xuất hiện trong các đáp án (A, B, C, D).
 
 Định dạng cho mỗi thuật ngữ:
 - **Tên thuật ngữ** (in đậm, không có dấu hai chấm)
@@ -316,7 +316,7 @@ Liệt kê và giải thích TẤT CẢ các AWS services, concepts, và thuật
 QUAN TRỌNG: KHÔNG dùng dấu hai chấm (:) sau tên thuật ngữ.`
         : `## Theoretical Foundation of Question Terms
 
-List and explain ALL AWS services, concepts, and technical terms mentioned in the question.
+List and explain ALL PMP concepts, processes, and technical terms mentioned in the question.
 
 Format for each term:
 - **Term name** (bold, NO colon)
@@ -324,7 +324,7 @@ Format for each term:
 
 ## Theoretical Foundation of Answer Terms
 
-List and explain ALL AWS services, concepts, and technical terms appearing in the answers (A, B, C, D).
+List and explain ALL PMP concepts, processes, and technical terms appearing in the answers (A, B, C, D).
 
 Format for each term:
 - **Term name** (bold, NO colon)
@@ -332,7 +332,7 @@ Format for each term:
 
 IMPORTANT: Do NOT use colons (:) after term names.`;
 
-    const prompt = `You are an AWS Solutions Architect expert. Provide theoretical foundation for this question.
+    const prompt = `You are a Project Management Professional (PMP) expert. Provide theoretical foundation for this question based on the PMBOK Guide and PMI standards.
 
 Question: ${question}
 

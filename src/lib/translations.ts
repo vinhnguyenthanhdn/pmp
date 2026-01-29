@@ -9,8 +9,8 @@ interface Translations {
 
 const translations: Translations = {
     app_title: {
-        vi: 'AWS SAA-C03 Quiz',
-        en: 'AWS SAA-C03 Quiz',
+        vi: 'PMP Training Center',
+        en: 'PMP Training Center',
     },
     question_header: {
         vi: 'Câu hỏi',
@@ -65,12 +65,12 @@ const translations: Translations = {
         en: 'Your answer',
     },
     loading_theory: {
-        vi: '⏳ Đang tải lý thuyết...',
-        en: '⏳ Loading theory...',
+        vi: '⏳ Đang tải kiến thức PMP...',
+        en: '⏳ Loading PMP knowledge...',
     },
     loading_explanation: {
-        vi: '⏳ Đang phân tích...',
-        en: '⏳ Analyzing...',
+        vi: '⏳ Đang phân tích câu hỏi PMP...',
+        en: '⏳ Analyzing PMP question...',
     },
     ai_explanation: {
         vi: '🤖 Giải thích AI',

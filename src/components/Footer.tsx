@@ -7,7 +7,7 @@ export const Footer: React.FC = () => {
             <div className="container">
                 <div className="footer-content">
                     <p className="footer-text">
-                        Made with ❤️ for AWS Certification Aspirants
+                        Made with ❤️ for PMI PMP Certification Aspirants
                     </p>
                     <p className="footer-contact">
                         📧 Contact: <a href="mailto:vinh.nguyenthanhdn@gmail.com">vinh.nguyenthanhdn@gmail.com</a>
