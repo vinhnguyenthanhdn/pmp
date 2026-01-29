@@ -41,7 +41,7 @@ function App() {
 
                 while (fetchMore) {
                     const { data, error } = await supabase
-                        .from('questions')
+                        .from('pmp_questions')
                         .select('*')
                         .range(from, from + PAGE_SIZE - 1)
                         .order('id');

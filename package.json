@@ -1,7 +1,7 @@
 {
-  "name": "aws-ssa-c03",
+  "name": "pmp-exam-master",
   "version": "1.0.0",
-  "description": "AWS Solutions Architect Associate (SAA-C03) Practice Quiz Application",
+  "description": "PMI Project Management Professional (PMP) Practice Quiz Application",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,15 +10,22 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vinhnguyenthanhdn/aws-ssa-c03.git"
+    "url": "git+https://github.com/vinhnguyenthanhdn/pmp.git"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "pmp",
+    "pmi",
+    "project-management",
+    "certification",
+    "quiz",
+    "exam-prep"
+  ],
+  "author": "Vinh Nguyen",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/vinhnguyenthanhdn/aws-ssa-c03/issues"
+    "url": "https://github.com/vinhnguyenthanhdn/pmp/issues"
   },
-  "homepage": "https://github.com/vinhnguyenthanhdn/aws-ssa-c03#readme",
+  "homepage": "https://github.com/vinhnguyenthanhdn/pmp#readme",
   "devDependencies": {
     "@types/react": "^19.2.8",
     "@types/react-dom": "^19.2.3",

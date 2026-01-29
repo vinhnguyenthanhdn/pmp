@@ -3,7 +3,7 @@ import { supabase } from './supabase';
 export async function saveUserProgress(userId: string, index: number) {
     try {
         const { error } = await supabase
-            .from('user_progress')
+            .from('pmp_user_progress')
             .upsert({
                 user_id: userId,
                 last_question_index: index,
@@ -19,7 +19,7 @@ export async function saveUserProgress(userId: string, index: number) {
 export async function getUserProgress(userId: string): Promise<number | null> {
     try {
         const { data, error } = await supabase
-            .from('user_progress')
+            .from('pmp_user_progress')
             .select('last_question_index')
             .eq('user_id', userId)
             .single();

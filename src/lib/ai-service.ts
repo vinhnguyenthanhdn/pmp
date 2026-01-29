@@ -20,7 +20,7 @@ const getAllApiKeys = (): string[] => {
 async function getLastUsedKeyIndex(): Promise<number> {
     try {
         const { data, error } = await supabase
-            .from('app_settings')
+            .from('pmp_app_settings')
             .select('value')
             .eq('key', 'gemini_key_index')
             .single();
@@ -37,7 +37,7 @@ async function getLastUsedKeyIndex(): Promise<number> {
 async function updateLastUsedKeyIndex(index: number) {
     try {
         await supabase
-            .from('app_settings')
+            .from('pmp_app_settings')
             .upsert({
                 key: 'gemini_key_index',
                 value: String(index),
@@ -127,7 +127,7 @@ async function getCachedAIContent(
 ): Promise<string | null> {
     try {
         const { data, error } = await supabase
-            .from('ai_cache')
+            .from('pmp_ai_cache')
             .select('content')
             .eq('question_id', questionId)
             .eq('language', language)
@@ -171,7 +171,7 @@ async function setCachedAIContent(
     content: string
 ): Promise<void> {
     try {
-        await supabase.from('ai_cache').upsert({
+        await supabase.from('pmp_ai_cache').upsert({
             question_id: questionId,
             language,
             type,

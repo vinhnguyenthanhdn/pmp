@@ -1,7 +1,7 @@
 import { supabase } from './supabase';
 import { UserSubmission } from '../types';
 
-export const TABLE_NAME = 'user_submissions';
+export const TABLE_NAME = 'pmp_user_submissions';
 
 export async function saveUserSubmission(
     userId: string,
