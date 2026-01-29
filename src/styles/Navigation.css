@@ -1,0 +1,64 @@
+.navigation {
+    margin: var(--space-xl) 0;
+    padding: var(--space-lg) 0;
+    border-top: 2px solid var(--color-border);
+}
+
+.nav-buttons {
+    display: flex;
+    gap: var(--space-md);
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.jump-form {
+    display: flex;
+    gap: var(--space-sm);
+    align-items: stretch;
+    /* Make button same height as input */
+}
+
+.jump-input {
+    width: 120px;
+    /* Reduced from 200px for compact layout */
+    font-size: 16px;
+    /* Prevent iOS auto-zoom (requires >= 16px) */
+}
+
+/* Go button styling */
+.jump-form .btn {
+    min-width: 80px;
+    /* Make Go button wider and easier to tap */
+    padding: var(--space-sm) var(--space-lg);
+}
+
+@media (max-width: 768px) {
+    .nav-buttons {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .nav-buttons>button {
+        width: 100%;
+    }
+
+    .jump-form {
+        width: 100%;
+    }
+
+    .jump-input {
+        width: auto;
+        flex: 1;
+        max-width: 120px;
+        /* Keep input compact on mobile */
+    }
+
+    /* Make Go button more prominent on mobile */
+    .jump-form .btn {
+        flex: 1;
+        min-width: 100px;
+        font-size: 1rem;
+        font-weight: 600;
+    }
+}
