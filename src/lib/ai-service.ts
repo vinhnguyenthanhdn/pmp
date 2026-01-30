@@ -1,123 +1,106 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { supabase } from './supabase';
 import type { Language } from '../types';
 
-const getAllApiKeys = (): string[] => {
-    // Try to get list of keys first
-    const keysString = import.meta.env.VITE_GOOGLE_API_KEYS || '';
-    const keys = keysString.split(',').map((k: string) => k.trim()).filter((k: string) => k.length > 0);
+// Hugging Face Configuration
+const HUGGINGFACE_API_KEY = import.meta.env.VITE_HUGGINGFACE_API_KEY || '';
+const HF_MODEL = import.meta.env.VITE_HF_MODEL || "meta-llama/Llama-3.1-70B-Instruct";
+const HF_API_URL = `https://api-inference.huggingface.co/models/${HF_MODEL}/v1/chat/completions`;
 
-    // Fallback to single key if list is empty
-    if (keys.length === 0) {
-        const singleKey = import.meta.env.VITE_GEMINI_API_KEY || '';
-        return singleKey ? [singleKey] : [];
-    }
-
-    return keys;
-};
-
-// Helper to get last used key index
-async function getLastUsedKeyIndex(): Promise<number> {
-    try {
-        const { data, error } = await supabase
-            .from('pmp_app_settings')
-            .select('value')
-            .eq('key', 'gemini_key_index')
-            .single();
-
-        if (error || !data) return 0;
-        return parseInt(data.value, 10) || 0;
-    } catch (e) {
-        console.warn('Failed to get last key index:', e);
-        return 0;
-    }
+interface HFMessage {
+    role: 'system' | 'user' | 'assistant';
+    content: string;
 }
 
-// Helper to save last used key index
-async function updateLastUsedKeyIndex(index: number) {
-    try {
-        await supabase
-            .from('pmp_app_settings')
-            .upsert({
-                key: 'gemini_key_index',
-                value: String(index),
-                updated_at: new Date().toISOString()
-            });
-    } catch (e) {
-        console.warn('Failed to update last key index:', e);
-    }
+interface HFChatRequest {
+    model: string;
+    messages: HFMessage[];
+    max_tokens: number;
+    temperature: number;
 }
 
-async function callGeminiAPI(prompt: string): Promise<string> {
-    const apiKeys = getAllApiKeys();
+interface HFChatResponse {
+    choices: Array<{
+        message: {
+            content: string;
+        };
+    }>;
+}
 
-    if (apiKeys.length === 0) {
-        throw new Error('No API Key configured');
+async function callHuggingFaceAPI(prompt: string): Promise<string> {
+    if (!HUGGINGFACE_API_KEY) {
+        throw new Error('No Hugging Face API Key configured');
     }
 
-    // Get start index from DB
-    const startIndex = await getLastUsedKeyIndex();
-    console.log(`🔄 Starting with API key index: ${startIndex}`);
+    try {
+        console.log(`🤖 Calling Hugging Face API with model: ${HF_MODEL}...`);
 
-    // Try each API key looking for success, starting from startIndex
-    // Loop logic: we want to try exactly apiKeys.length times
-    for (let offset = 0; offset < apiKeys.length; offset++) {
-        // Calculate actual index with wrap-around
-        const i = (startIndex + offset) % apiKeys.length;
+        const messages: HFMessage[] = [
+            {
+                role: "system",
+                content: "You are a professional PMP tutor. You keep technical terms in English but explain in the requested language. You never use Chinese/Japanese characters."
+            },
+            {
+                role: "user",
+                content: prompt
+            }
+        ];
 
-        const apiKey = apiKeys[i];
-        const keyId = `key ${i + 1}/${apiKeys.length}`;
+        const requestBody: HFChatRequest = {
+            model: HF_MODEL,
+            messages: messages,
+            max_tokens: 2000,
+            temperature: 0.1 // Low temperature for logical and consistent responses
+        };
 
-        try {
-            console.log(`🔑 Trying ${keyId}...`);
-            const genAI = new GoogleGenerativeAI(apiKey);
-            const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+        const response = await fetch(HF_API_URL, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${HUGGINGFACE_API_KEY}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestBody)
+        });
 
-            const result = await model.generateContent(prompt);
-            const text = result.response.text();
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`❌ Hugging Face API error (${response.status}):`, errorText);
 
-            if (text && text.trim() !== '') {
-                console.log(`✅ ${keyId} succeeded`);
-
-                // If we successfully used a DIFFERENT key than we started with,
-                // or just to be safe, update the pointer to the NEXT key (load balancing)
-                // OR update to CURRENT key (stickiness). 
-                // User requested: "save latest key index... to use next key next time"
-                // Let's save the current successful index so we start here (or explicitly next) next time.
-                // Usually "stickiness" is better (stay on working key until it fails).
-                // But if user wants rotation, we can save (i + 1) % length.
-                // Re-reading request: "save latest key index... so next call uses next key" -> implies rotation?
-                // Actually: "if key 1 fails, check key 2... save latest index."
-                // Standard practice: Save the WORKING key index. Start from there next time.
-
-                if (i !== startIndex) {
-                    await updateLastUsedKeyIndex(i);
-                }
-
-                return text;
+            // Check for rate limiting or service unavailable
+            if (response.status === 429 || response.status === 503) {
+                throw new Error('AI_SERVICE_UNAVAILABLE');
             }
 
-            console.warn(`⚠️ ${keyId} returned empty response`);
-        } catch (error: any) {
-            const errorMsg = error?.message || String(error);
-
-            // Check if it's a rate limit or quota error
-            if (errorMsg.toLowerCase().includes('quota') ||
-                errorMsg.toLowerCase().includes('rate') ||
-                errorMsg.toLowerCase().includes('429')) {
-                console.warn(`⚠️ ${keyId} rate limited, trying next key...`);
-                // Don't save failing index. Loop continues to next key.
-                continue;
-            }
-
-            // For other errors, also try next key
-            console.warn(`⚠️ ${keyId} failed: ${errorMsg}, trying next key...`);
+            throw new Error(`Hugging Face API error: ${response.status} - ${errorText}`);
         }
-    }
 
-    // All keys exhausted
-    console.error('❌ All API keys exhausted!');
-    throw new Error('AI_SERVICE_UNAVAILABLE');
+        const data: HFChatResponse = await response.json();
+
+        if (!data.choices || data.choices.length === 0) {
+            console.error('❌ No choices in Hugging Face response');
+            throw new Error('No response generated');
+        }
+
+        const text = data.choices[0].message.content;
+
+        if (!text || text.trim() === '') {
+            console.error('❌ Empty response from Hugging Face');
+            throw new Error('Empty response generated');
+        }
+
+        console.log('✅ Hugging Face API call successful');
+        return text;
+
+    } catch (error: any) {
+        const errorMsg = error?.message || String(error);
+        console.error('❌ Hugging Face API call failed:', errorMsg);
+
+        // Re-throw with appropriate error type
+        if (errorMsg.includes('AI_SERVICE_UNAVAILABLE')) {
+            throw new Error('AI_SERVICE_UNAVAILABLE');
+        }
+
+        throw error;
+    }
 }
 
 async function getCachedAIContent(
@@ -182,6 +165,68 @@ async function setCachedAIContent(
     }
 }
 
+function getTheoryPrompt(question: string, options: string, language: Language): string {
+    const targetLang = language === 'vi' ? "Tiếng Việt" : "English";
+
+    return `You are a world-class PMP Instructor. 
+STRICT RULES:
+1. All technical PMP terms (e.g., 'Critical Path', 'Risk Register', 'Sprint Retrospective') MUST remain in English.
+2. Provide detailed explanations in ${targetLang}.
+3. DO NOT repeat explanations if a term appears in both the question and options.
+4. Focus on the 'Why' and 'How' it's used in project management.
+
+Question: ${question}
+Options:
+${options}
+
+Format the response as follows:
+## Cơ sở lý thuyết các khái niệm
+- **[English Term]**: [Detailed explanation in ${targetLang}]
+- **[English Term]**: [Detailed explanation...]
+
+## Các công cụ và kỹ thuật (Tools & Techniques)
+- **[English Term]**: [Specific purpose and application in this context]
+`;
+}
+
+function getExplanationPrompt(question: string, options: string, correctAnswer: string, language: Language): string {
+    const targetLang = language === 'vi' ? "Tiếng Việt" : "English";
+
+    // Extract the text of the correct answer
+    let correctText = "N/A";
+    const optionLines = options.split('\n');
+    for (const line of optionLines) {
+        if (line.startsWith(`${correctAnswer}.`)) {
+            correctText = line.replace(`${correctAnswer}. `, "");
+            break;
+        }
+    }
+
+    return `You are a PMP Mentor. 
+STRICT RULES:
+1. The correct answer is ${correctAnswer}: "${correctText}". You MUST justify this answer.
+2. Use ${targetLang} for the explanation but KEEP technical terms in English.
+3. Provide a deep analysis of the situation (Lifecycle: Agile/Predictive/Hybrid).
+
+Question: ${question}
+Options:
+${options}
+
+Format the response as follows:
+## Phân tích tình huống
+[Phân tích ngữ cảnh dự án, xác định vấn đề cốt lõi và giai đoạn của dự án.]
+
+## Giải thích đáp án đúng (${correctAnswer})
+[Giải thích tại sao "${correctText}" là lựa chọn tốt nhất dựa trên PM Mindset và tiêu chuẩn PMI.]
+
+## Tại sao các đáp án khác không phù hợp
+[Phân tích chi tiết từng phương án còn lại và lý do loại trừ chúng.]
+
+## PMP Mindset
+[Một quy tắc vàng hoặc mẹo rút ra từ câu hỏi này.]
+`;
+}
+
 export async function getAIExplanation(
     question: string,
     options: string,
@@ -195,78 +240,10 @@ export async function getAIExplanation(
         console.log(`✅ Cache HIT for explanation: Q${questionId} (${language})`);
         return cached;
     }
-    console.log(`🔄 Cache MISS - Calling Gemini API for explanation: Q${questionId} (${language})`);
+    console.log(`🔄 Cache MISS - Calling Hugging Face API for explanation: Q${questionId} (${language})`);
 
-    const languageInstruction = language === 'vi'
-        ? 'Vui lòng trả lời bằng tiếng Việt.'
-        : 'Please respond in English.';
-
-    const promptStructure = language === 'vi'
-        ? `## Giải thích câu hỏi
-
-Phân tích yêu cầu chính của câu hỏi, xác định các điểm mấu chốt cần chú ý.
-
-## Giải thích đáp án đúng
-
-Tại sao đáp án ${correctAnswer} là đúng? Giải thích chi tiết.
-
-## Tại sao không chọn các đáp án khác
-
-Phân tích từng đáp án sai, giải thích lý do.
-
-## Các lỗi thường gặp
-
-Liệt kê các lỗi mà thí sinh hay mắc phải.
-
-## Mẹo để nhớ
-
-Cung cấp các mẹo, tricks để áp dụng cho các câu hỏi tương tự.
-
-QUAN TRỌNG: Khi đề cập đến các keywords hoặc concepts trong nội dung, viết chúng ở dạng **in đậm** KHÔNG CÓ dấu hai chấm (:) phía sau. Ví dụ: **Keyword** chứ không phải **Keyword:**`
-        : `## Question Analysis
-
-Analyze the main requirements of the question and identify the key points.
-
-## Correct Answer Explanation
-
-Why is answer ${correctAnswer} correct? Explain in detail.
-
-## Why Other Answers Are Wrong
-
-Analyze each incorrect answer and explain why.
-
-## Common Mistakes
-
-List the mistakes students often make.
-
-## Tips to Remember
-
-Provide tips and tricks to apply to similar questions.
-
-IMPORTANT: When mentioning keywords or concepts in content, write them in **bold** withOUT colons (:) after. Example: **Keyword** NOT **Keyword:**`;
-
-    const prompt = `You are a Project Management Professional (PMP) expert. Analyze this PMP exam question based on the PMBOK Guide and PMI standards.
-
-Question: ${question}
-
-Options:
-${options}
-
-Correct Answer: ${correctAnswer}
-
-${languageInstruction}
-
-IMPORTANT: Start directly with the analysis. Do NOT include any greetings, introductions, or conclusions. Go straight to the structured content.
-
-Do NOT use colons (:) after bold keywords. Write descriptions on the same line or new line without colons.
-
-Provide a comprehensive explanation:
-
-${promptStructure}
-
-Keep the explanation structured and easy to understand (max 500 words).`;
-
-    const content = await callGeminiAPI(prompt);
+    const prompt = getExplanationPrompt(question, options, correctAnswer, language);
+    const content = await callHuggingFaceAPI(prompt);
 
     // Only cache if content is valid
     if (content && content.trim() !== '' && content !== 'No response generated') {
@@ -290,66 +267,10 @@ export async function getAITheory(
         console.log(`✅ Cache HIT for theory: Q${questionId} (${language})`);
         return cached;
     }
-    console.log(`🔄 Cache MISS - Calling Gemini API for theory: Q${questionId} (${language})`);
+    console.log(`🔄 Cache MISS - Calling Hugging Face API for theory: Q${questionId} (${language})`);
 
-    const languageInstruction = language === 'vi'
-        ? 'Vui lòng trả lời bằng tiếng Việt.'
-        : 'Please respond in English.';
-
-    const promptStructure = language === 'vi'
-        ? `## Cơ sở lý thuyết các thuật ngữ trong câu hỏi
-
-Liệt kê và giải thích TẤT CẢ các PMP concepts, processes, và thuật ngữ kỹ thuật được đề cập trong câu hỏi.
-
-Định dạng cho mỗi thuật ngữ:
-- **Tên thuật ngữ** (in đậm, không có dấu hai chấm)
-- Giải thích ngắn gọn và đầy đủ về thuật ngữ đó (trên dòng mới)
-
-## Cơ sở lý thuyết các thuật ngữ trong đáp án
-
-Liệt kê và giải thích TẤT CẢ các PMP concepts, processes, và thuật ngữ kỹ thuật xuất hiện trong các đáp án (A, B, C, D).
-
-Định dạng cho mỗi thuật ngữ:
-- **Tên thuật ngữ** (in đậm, không có dấu hai chấm)
-- Giải thích ngắn gọn và đầy đủ về thuật ngữ đó (trên dòng mới)
-
-QUAN TRỌNG: KHÔNG dùng dấu hai chấm (:) sau tên thuật ngữ.`
-        : `## Theoretical Foundation of Question Terms
-
-List and explain ALL PMP concepts, processes, and technical terms mentioned in the question.
-
-Format for each term:
-- **Term name** (bold, NO colon)
-- Concise but thorough explanation (on new line)
-
-## Theoretical Foundation of Answer Terms
-
-List and explain ALL PMP concepts, processes, and technical terms appearing in the answers (A, B, C, D).
-
-Format for each term:
-- **Term name** (bold, NO colon)
-- Concise but thorough explanation (on new line)
-
-IMPORTANT: Do NOT use colons (:) after term names.`;
-
-    const prompt = `You are a Project Management Professional (PMP) expert. Provide theoretical foundation for this question based on the PMBOK Guide and PMI standards.
-
-Question: ${question}
-
-Options:
-${options}
-
-${languageInstruction}
-
-IMPORTANT: Start directly with the theoretical content. Do NOT include any greetings, introductions (like "Chào bạn, là một chuyên gia..."), or conclusions. Go straight to the structured content below.
-
-Provide a comprehensive theoretical breakdown:
-
-${promptStructure}
-
-Keep the theory organized and easy to reference (max 500 words).`;
-
-    const content = await callGeminiAPI(prompt);
+    const prompt = getTheoryPrompt(question, options, language);
+    const content = await callHuggingFaceAPI(prompt);
 
     // Only cache if content is valid
     if (content && content.trim() !== '' && content !== 'No response generated') {
