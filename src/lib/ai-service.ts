@@ -14,20 +14,64 @@ interface HFChatResponse {
     }>;
 }
 
+// Fallback configuration for direct client-side calls (e.g., local dev)
+const VITE_HUGGINGFACE_API_KEY = import.meta.env.VITE_HUGGINGFACE_API_KEY || '';
+const VITE_HF_MODEL = import.meta.env.VITE_HF_MODEL || "meta-llama/Llama-3.1-70B-Instruct";
+const HF_DIRECT_API_URL = `https://api-inference.huggingface.co/models/${VITE_HF_MODEL}/v1/chat/completions`;
+
+async function callDirectHuggingFaceAPI(messages: HFMessage[]): Promise<string> {
+    if (!VITE_HUGGINGFACE_API_KEY) {
+        throw new Error('No VITE_HUGGINGFACE_API_KEY configured for direct call fallback');
+    }
+
+    console.log(`⚠️ Proxy failed or unavailable, falling back to direct Hugging Face API call...`);
+
+    const response = await fetch(HF_DIRECT_API_URL, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${VITE_HUGGINGFACE_API_KEY}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            model: VITE_HF_MODEL,
+            messages: messages,
+            max_tokens: 2000,
+            temperature: 0.1
+        })
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        // Check for rate limiting
+        if (response.status === 429 || response.status === 503) {
+            throw new Error('AI_SERVICE_UNAVAILABLE');
+        }
+        throw new Error(`Direct API error: ${response.status} - ${errorText}`);
+    }
+
+    const data: HFChatResponse = await response.json();
+
+    if (!data.choices || data.choices.length === 0) {
+        throw new Error('No response generated (Direct)');
+    }
+
+    return data.choices[0].message.content;
+}
+
 async function callHuggingFaceAPI(prompt: string): Promise<string> {
+    const messages: HFMessage[] = [
+        {
+            role: "system",
+            content: "You are a professional PMP tutor. You keep technical terms in English but explain in the requested language. You never use Chinese/Japanese characters."
+        },
+        {
+            role: "user",
+            content: prompt
+        }
+    ];
+
     try {
         console.log(`🤖 Calling Hugging Face API via proxy...`);
-
-        const messages: HFMessage[] = [
-            {
-                role: "system",
-                content: "You are a professional PMP tutor. You keep technical terms in English but explain in the requested language. You never use Chinese/Japanese characters."
-            },
-            {
-                role: "user",
-                content: prompt
-            }
-        ];
 
         // Use proxy API endpoint (works in both dev and production)
         const apiUrl = '/api/ai';
@@ -43,6 +87,12 @@ async function callHuggingFaceAPI(prompt: string): Promise<string> {
                 temperature: 0.1
             })
         });
+
+        // If Proxy returns 404 (Not Found - e.g. local vite) or 500 (Server Error - e.g. missing env vars on Vercel)
+        if (response.status === 404 || response.status === 500) {
+            console.warn(`Proxy returned ${response.status}, attempting fallback...`);
+            return await callDirectHuggingFaceAPI(messages);
+        }
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
@@ -70,19 +120,31 @@ async function callHuggingFaceAPI(prompt: string): Promise<string> {
             throw new Error('Empty response generated');
         }
 
-        console.log('✅ Hugging Face API call successful');
+        console.log('✅ Hugging Face API call successful (Proxy)');
         return text;
 
     } catch (error: any) {
         const errorMsg = error?.message || String(error);
-        console.error('❌ Hugging Face API call failed:', errorMsg);
+        console.error('❌ Hugging Face Proxy call failed:', errorMsg);
 
-        // Re-throw with appropriate error type
+        // Don't retry if it was specifically AI Service Unavailable (quota/overload)
         if (errorMsg.includes('AI_SERVICE_UNAVAILABLE')) {
             throw new Error('AI_SERVICE_UNAVAILABLE');
         }
 
-        throw error;
+        // Try fallback for network errors or other proxy failures
+        console.log('🔄 Attempting fallback to direct API call...');
+        try {
+            const fallbackText = await callDirectHuggingFaceAPI(messages);
+            console.log('✅ Hugging Face API call successful (Fallback)');
+            return fallbackText;
+        } catch (fallbackError: any) {
+            console.error('❌ Fallback also failed:', fallbackError);
+            if (fallbackError?.message?.includes('AI_SERVICE_UNAVAILABLE')) {
+                throw new Error('AI_SERVICE_UNAVAILABLE');
+            }
+            throw error; // Throw original proxy error or fallback error
+        }
     }
 }
 
@@ -160,6 +222,8 @@ STRICT RULES:
 3. DO NOT repeat explanations if a term appears in both the question and options.
 4. Focus on the 'Why' and 'How' it's used in project management.
 5. If you must explain a concept, start the bullet point with the **English Term**.
+6. **DO NOT REVEAL THE CORRECT ANSWER**. This is a theory section only.
+7. **DO NOT INCLUDE A CONCLUSION** or "The correct answer is..." statement at the end.
 
 Question: ${question}
 Options:

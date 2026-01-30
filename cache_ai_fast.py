@@ -52,10 +52,15 @@ def get_theory_prompt(question: str, options: str, language: str) -> str:
     
     return f"""You are a world-class PMP Instructor. 
 STRICT RULES:
-1. All technical PMP terms (e.g., 'Critical Path', 'Risk Register', 'Sprint Retrospective') MUST remain in English.
+1. **KEEP ALL PMP TECHNICAL TERMS IN ENGLISH**. Do NOT translate terms like 'Product Backlog', 'Sprint Review', 'Stakeholder Register', 'Critical Path', 'Servant Leadership', 'Retrospective', 'Team Charter', 'Iteration', 'Daily Standup', etc.
+   - RIGHT: **Sprint Review**: Buổi họp cuối sprint để demo sản phẩm...
+   - WRONG: **Đánh giá nước rút**: Buổi họp...
 2. Provide detailed explanations in {target_lang}.
 3. DO NOT repeat explanations if a term appears in both the question and options.
 4. Focus on the 'Why' and 'How' it's used in project management.
+5. If you must explain a concept, start the bullet point with the **English Term**.
+6. **DO NOT REVEAL THE CORRECT ANSWER**. This is a theory section only.
+7. **DO NOT INCLUDE A CONCLUSION** or "The correct answer is..." statement at the end.
 
 Question: {question}
 Options:
@@ -83,8 +88,9 @@ def get_explanation_prompt(question: str, options: str, correct_letter: str, lan
     return f"""You are a PMP Mentor. 
 STRICT RULES:
 1. The correct answer is {correct_letter}: "{correct_text}". You MUST justify this answer.
-2. Use {target_lang} for the explanation but KEEP technical terms in English.
+2. **KEEP TECHNICAL TERMS IN ENGLISH**. Do not translate standard PMP terms (e.g., use "Project Charter", not "Hiến chương dự án"; use "Stakeholder Engagement", not "Sự tham gia của các bên liên quan").
 3. Provide a deep analysis of the situation (Lifecycle: Agile/Predictive/Hybrid).
+4. Use {target_lang} for the narrative explanation.
 
 Question: {question}
 Options:
