@@ -88,8 +88,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     });
 
     const incorrectCount = totalAnswered - correctCount;
-    const correctRate = totalAnswered > 0
-        ? Math.round((correctCount / totalAnswered) * 100)
+    const passRate = totalQuestions > 0
+        ? Math.round((correctCount / totalQuestions) * 100)
         : 0;
 
     return (
@@ -111,8 +111,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             {/* Compact Stats Section */}
             <div className="stats-dashboard compact">
                 <div className="stat-group main">
-                    <span className="stat-label-inline">Correct Rate:</span>
-                    <span className="stat-value-inline highlight">{correctRate}%</span>
+                    <span className="stat-label-inline">Pass Rate:</span>
+                    <span className="stat-value-inline highlight">{passRate}%</span>
                 </div>
 
                 <div className="stat-divider"></div>
