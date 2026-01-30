@@ -69,6 +69,24 @@
     flex-shrink: 0;
 }
 
+/* Checkbox Style */
+.checkbox-container {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+    user-select: none;
+}
+
+.checkbox-container input {
+    cursor: pointer;
+    width: 1.1rem;
+    height: 1.1rem;
+    accent-color: var(--color-primary);
+}
+
 .btn-clear-history:hover {
     background: #fee;
     border-color: var(--color-error);

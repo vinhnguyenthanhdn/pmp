@@ -70,6 +70,13 @@
     background-color: var(--color-bg-secondary);
     font-weight: 600;
     color: var(--color-text-secondary);
+    white-space: nowrap;
+    /* Prevent headers from wrapping too much */
+}
+
+/* Ensure actions column doesn't wrap weirdly */
+.users-table td:last-child {
+    white-space: nowrap;
 }
 
 .users-table tr:last-child td {
@@ -90,15 +97,6 @@
 }
 
 .status-badge.pending {
-    background-color: var(--color-warning);
-    /* Light yellow/orange from theme is better than manual rgba */
-    color: #fff;
-    /* Or use a lighter background with dark text if preferred, 
-       but let's stick to theme vars if possible. 
-       Currently --color-warning is orange. Let's use opacity manually for badge background if needed 
-       or define a --color-warning-light in index if available? It's not. 
-       Let's stick to safe colors.
-    */
     background-color: rgba(245, 158, 11, 0.2);
     color: #d97706;
 }
@@ -135,7 +133,6 @@
 
 .btn-approve:hover {
     background-color: hsl(142, 76%, 32%);
-    /* A bit darker */
     transform: translateY(-1px);
 }
 
@@ -160,7 +157,6 @@
     color: var(--color-text-primary);
 }
 
-/* Make Admin Button Styling */
 .btn-secondary {
     background-color: transparent;
     border: 1px solid var(--color-primary);
@@ -175,4 +171,54 @@
     padding: 2rem;
     text-align: center;
     color: var(--color-text-secondary);
+}
+
+/* === MOBILE RESPONSIVE === */
+@media (max-width: 768px) {
+    .admin-container {
+        padding: 0 0.5rem;
+        margin-top: 1rem;
+    }
+
+    .admin-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .admin-title {
+        font-size: 1.5rem;
+    }
+
+    .admin-stats {
+        grid-template-columns: 1fr 1fr;
+        /* 2 columns on mobile */
+        gap: 0.5rem;
+    }
+
+    .stat-card {
+        padding: 1rem;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+    }
+
+    /* Table Optimization for Mobile */
+    .users-table th,
+    .users-table td {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    /* Hide less important columns on very small screens if needed, 
+       but horizontal scroll is safer. */
+    .users-table-container {
+        margin: 0 -0.5rem;
+        /* Negative margin to let table touch edges */
+        border-radius: 0;
+        border-right: none;
+        border-left: none;
+    }
 }

@@ -16,6 +16,7 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
 }) => {
     const [submissions, setSubmissions] = useState<UserSubmission[]>([]);
     const [loading, setLoading] = useState(true);
+    const [hideCorrect, setHideCorrect] = useState(false);
 
     useEffect(() => {
         loadHistory();
@@ -45,11 +46,35 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
     }, {} as Record<string, UserSubmission[]>);
 
     // Sort groups by latest submission time
-    const sortedGroups = Object.entries(groupedSubmissions).sort(([, aSubs], [, bSubs]) => {
+    let sortedGroups = Object.entries(groupedSubmissions).sort(([, aSubs], [, bSubs]) => {
         const aLatest = new Date(aSubs[0].submitted_at).getTime();
         const bLatest = new Date(bSubs[0].submitted_at).getTime();
         return bLatest - aLatest;
     });
+
+    // Calculate Pass Rate
+    const totalSubmissions = submissions.length;
+    const correctSubmissions = submissions.filter(s => s.is_correct).length;
+    const passRate = totalSubmissions > 0
+        ? Math.round((correctSubmissions / totalSubmissions) * 100)
+        : 0;
+
+    // Filter Logic: Hide if LATEST attempt is correct
+    if (hideCorrect) {
+        sortedGroups = sortedGroups.filter(([, groupSubs]) => {
+            // groupSubs is sorted DESC by time, so index 0 is latest
+            // However, verify sort order of groupSubs just in case
+            // The API usually returns sorted, but let's be safe.
+            // Actually, let's just find the max date item or trust index 0 if we sorted it?
+            // User-service doesn't guarantee order inside group unless we sort.
+
+            // Let's sort the groupSubs to be sure 0 is latest
+            const sortedSubs = [...groupSubs].sort((a, b) =>
+                new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime()
+            );
+            return !sortedSubs[0].is_correct;
+        });
+    }
 
     if (loading) {
         return (
@@ -80,12 +105,28 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
                     <h2 className="history-title">Submission History</h2>
                     <div className="history-stats">
                         <span className="stat-item">
+                            <strong>{passRate}%</strong> Pass Rate
+                        </span>
+                        <span className="stat-divider">•</span>
+                        <span className="stat-item">
                             <strong>{submissions.length}</strong> Total Submissions
                         </span>
                         <span className="stat-divider">•</span>
                         <span className="stat-item">
                             <strong>{Object.keys(groupedSubmissions).length}</strong> Questions Attempted
                         </span>
+                    </div>
+
+                    <div className="history-filters" style={{ marginTop: '0.5rem' }}>
+                        <label className="checkbox-container">
+                            <input
+                                type="checkbox"
+                                checked={hideCorrect}
+                                onChange={(e) => setHideCorrect(e.target.checked)}
+                            />
+                            <span className="checkmark"></span>
+                            Hide Correct Questions
+                        </label>
                     </div>
                 </div>
                 <button
