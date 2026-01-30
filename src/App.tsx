@@ -11,6 +11,7 @@ import { getAIExplanation, getAITheory } from './lib/ai-service';
 import { saveUserProgress, getUserProgress } from './lib/user-service';
 import { saveUserSubmission } from './lib/history-service';
 import { HistoryPage } from './components/HistoryPage';
+import { LoginRequired } from './components/LoginRequired';
 import type { User } from '@supabase/supabase-js';
 import type { Question, Language } from './types';
 import './styles/App.css';
@@ -225,11 +226,6 @@ function App() {
     const currentQuestion = questions[currentIndex];
 
     const handleSubmitAnswer = (answer: string) => {
-        if (!user) {
-            alert(language === 'vi' ? 'Vui lòng đăng nhập để nộp bài và lưu kết quả.' : 'Please sign in to submit and save progress.');
-            return;
-        }
-
         const isCorrect = answer === currentQuestion.correct_answer;
 
         setUserAnswers(prev => ({
@@ -256,10 +252,6 @@ function App() {
     };
 
     const handleRequestTheory = async () => {
-        if (!user) {
-            alert(language === 'vi' ? 'Vui lòng đăng nhập để sử dụng AI.' : 'Please sign in to use AI features.');
-            return;
-        }
         if (!currentQuestion || aiLoading) return;
 
         // Save progress when user engages with AI
@@ -316,10 +308,6 @@ function App() {
     };
 
     const handleRequestExplanation = async () => {
-        if (!user) {
-            alert(language === 'vi' ? 'Vui lòng đăng nhập để xem giải thích.' : 'Please sign in to view explanations.');
-            return;
-        }
         if (!currentQuestion || aiLoading) return;
 
         // Save progress when user engages with AI
@@ -443,21 +431,10 @@ function App() {
                         questions={questions}
                         onJumpToQuestion={handleJumpToQuestion}
                     />
+                ) : !user ? (
+                    <LoginRequired language={language} />
                 ) : (
                     <>
-                        {!user && (
-                            <div style={{
-                                background: 'var(--color-bg-secondary)',
-                                padding: 'var(--space-sm)',
-                                textAlign: 'center',
-                                borderRadius: 'var(--radius-md)',
-                                marginBottom: 'var(--space-md)',
-                                fontSize: '0.9rem',
-                                color: 'var(--color-text-secondary)'
-                            }}>
-                                {language === 'vi' ? '⚠️ Bạn đang xem ở chế độ khách. Đăng nhập để lưu tiến độ và sử dụng AI.' : '⚠️ You are viewing as a guest. Sign in to save progress and use AI.'}
-                            </div>
-                        )}
                         <QuestionCard
                             question={currentQuestion}
                             questionNumber={currentIndex + 1}
