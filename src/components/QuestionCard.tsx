@@ -89,8 +89,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
     const incorrectCount = totalAnswered - correctCount;
     const passRate = totalQuestions > 0
-        ? Math.round((correctCount / totalQuestions) * 100)
-        : 0;
+        ? ((correctCount / totalQuestions) * 100).toFixed(2)
+        : '0.00';
 
     return (
         <div className="question-card card fade-in">
