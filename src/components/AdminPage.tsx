@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getAllUsers, updateUserStatus, updateUserRole } from '../lib/user-service';
+import { getAllUsers, updateUserStatus } from '../lib/user-service';
 import type { UserProfile } from '../lib/user-service';
 import '../styles/AdminPage.css';
 
@@ -24,6 +24,12 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
     }, []);
 
     const handleToggleStatus = async (user: UserProfile) => {
+        if (!user.is_approved) {
+            if (!confirm(`Are you sure you want to approve access for ${user.email}?`)) {
+                return;
+            }
+        }
+
         setActionLoading(user.id);
         const newStatus = !user.is_approved;
         const success = await updateUserStatus(user.id, newStatus);
@@ -36,19 +42,6 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
         setActionLoading(null);
     };
 
-    const handleMakeAdmin = async (user: UserProfile) => {
-        if (!confirm('Are you sure you want to make this user an Admin?')) return;
-
-        setActionLoading(user.id);
-        const success = await updateUserRole(user.id, 'admin');
-
-        if (success) {
-            setUsers(users.map(u =>
-                u.id === user.id ? { ...u, role: 'admin' } : u
-            ));
-        }
-        setActionLoading(null);
-    };
 
     if (loading) {
         return <div className="loading-container">Loading users...</div>;
@@ -60,7 +53,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
                 <h1 className="admin-title">User Management</h1>
                 {onBack && (
                     <button className="btn-secondary" onClick={onBack}>
-                        Back to App
+                        Back to Quiz
                     </button>
                 )}
             </div>
@@ -115,16 +108,6 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
                                         {user.is_approved ? 'Revoke' : 'Approve'}
                                     </button>
 
-                                    {user.role !== 'admin' && (
-                                        <button
-                                            className="action-btn btn-secondary"
-                                            onClick={() => handleMakeAdmin(user)}
-                                            disabled={actionLoading === user.id}
-                                            style={{ marginLeft: '10px', fontSize: '0.8rem' }}
-                                        >
-                                            Make Admin
-                                        </button>
-                                    )}
                                 </td>
                             </tr>
                         ))}

@@ -2,7 +2,7 @@
     max-width: 1000px;
     margin: 2rem auto;
     padding: 0 1rem;
-    color: var(--text-color);
+    color: var(--color-text-primary);
 }
 
 .admin-header {
@@ -15,7 +15,7 @@
 .admin-title {
     font-size: 2rem;
     font-weight: 700;
-    color: var(--primary-color);
+    color: var(--color-primary);
 }
 
 .admin-stats {
@@ -26,30 +26,32 @@
 }
 
 .stat-card {
-    background-color: var(--card-bg);
+    background-color: var(--color-bg-card);
     padding: 1.5rem;
     border-radius: 12px;
-    border: 1px solid var(--border-color);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-sm);
 }
 
 .stat-value {
     font-size: 2rem;
     font-weight: 700;
     margin-bottom: 0.5rem;
+    color: var(--color-text-primary);
 }
 
 .stat-label {
-    color: var(--text-muted);
+    color: var(--color-text-secondary);
     font-size: 0.9rem;
 }
 
 .users-table-container {
-    background-color: var(--card-bg);
+    background-color: var(--color-bg-card);
     border-radius: 12px;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--color-border);
     overflow: hidden;
     overflow-x: auto;
+    box-shadow: var(--shadow-sm);
 }
 
 .users-table {
@@ -61,13 +63,13 @@
 .users-table th,
 .users-table td {
     padding: 1rem;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--color-border);
 }
 
 .users-table th {
-    background-color: rgba(0, 0, 0, 0.2);
+    background-color: var(--color-bg-secondary);
     font-weight: 600;
-    color: var(--text-muted);
+    color: var(--color-text-secondary);
 }
 
 .users-table tr:last-child td {
@@ -83,66 +85,94 @@
 }
 
 .status-badge.approved {
-    background-color: rgba(16, 185, 129, 0.2);
-    color: #34d399;
+    background-color: var(--color-success-light);
+    color: var(--color-success);
 }
 
 .status-badge.pending {
+    background-color: var(--color-warning);
+    /* Light yellow/orange from theme is better than manual rgba */
+    color: #fff;
+    /* Or use a lighter background with dark text if preferred, 
+       but let's stick to theme vars if possible. 
+       Currently --color-warning is orange. Let's use opacity manually for badge background if needed 
+       or define a --color-warning-light in index if available? It's not. 
+       Let's stick to safe colors.
+    */
     background-color: rgba(245, 158, 11, 0.2);
-    color: #fbbf24;
+    color: #d97706;
 }
 
 .role-badge {
     text-transform: capitalize;
     font-size: 0.9rem;
-    color: var(--text-muted);
+    color: var(--color-text-secondary);
 }
 
 .role-badge.admin {
-    color: #818cf8;
+    color: var(--color-primary);
     font-weight: 600;
 }
 
 .action-btn {
-    padding: 0.5rem 1rem;
+    padding: 0.5rem 0.75rem;
     border-radius: 6px;
     border: none;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     cursor: pointer;
     transition: all 0.2s;
     margin-right: 0.5rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .btn-approve {
-    background-color: var(--primary-color);
+    background-color: var(--color-success);
     color: white;
 }
 
 .btn-approve:hover {
-    opacity: 0.9;
+    background-color: hsl(142, 76%, 32%);
+    /* A bit darker */
+    transform: translateY(-1px);
 }
 
 .btn-reject {
-    background-color: #ef4444;
+    background-color: var(--color-error);
     color: white;
 }
 
 .btn-reject:hover {
-    opacity: 0.9;
+    background-color: hsl(0, 84%, 50%);
+    transform: translateY(-1px);
 }
 
 .btn-revoke {
-    background-color: #374151;
-    color: var(--text-muted);
+    background-color: var(--color-bg-secondary);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border);
 }
 
 .btn-revoke:hover {
-    background-color: #4b5563;
-    color: white;
+    background-color: var(--color-border);
+    color: var(--color-text-primary);
+}
+
+/* Make Admin Button Styling */
+.btn-secondary {
+    background-color: transparent;
+    border: 1px solid var(--color-primary);
+    color: var(--color-primary);
+}
+
+.btn-secondary:hover {
+    background-color: var(--color-primary-light);
 }
 
 .loading-container {
     padding: 2rem;
     text-align: center;
-    color: var(--text-muted);
+    color: var(--color-text-secondary);
 }
