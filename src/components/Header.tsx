@@ -57,7 +57,6 @@ export const Header: React.FC<HeaderProps> = ({
                         onLanguageChange={onLanguageChange}
                     />
                     <h1 className="app-title">
-                        <span className="title-icon">🎯</span>
                         PMP Exam Master
                     </h1>
                     <p className="app-subtitle">
