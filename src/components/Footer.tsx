@@ -12,6 +12,7 @@ export const Footer: React.FC = () => {
                     <p className="footer-contact">
                         📧 Contact: <a href="mailto:haobv@fpt.com">haobv@fpt.com</a>
                     </p>
+                    <p className="footer-version">version: 1.0.1</p>
                 </div>
             </div>
         </footer>
