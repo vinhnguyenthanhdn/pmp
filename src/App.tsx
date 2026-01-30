@@ -481,7 +481,7 @@ function App() {
                 isAdminView={view === 'admin'}
             />
 
-            <main className="container">
+            <main className={`container ${view === 'admin' ? 'admin-view' : ''}`}>
                 {view === 'admin' && user && userRole === 'admin' ? (
                     <AdminPage onBack={() => setView('quiz')} />
                 ) : view === 'history' && user ? (

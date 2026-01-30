@@ -366,3 +366,8 @@ pre {
         font-size: 16px;
     }
 }
+/* Admin View Wider Container */
+.container.admin-view {
+    max-width: 1600px;
+    padding: 0 var(--space-lg);
+}
