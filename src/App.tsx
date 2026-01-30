@@ -163,11 +163,15 @@ function App() {
             handleAuthChange(session);
         });
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            // On subsequent changes, we don't necessarily block URL updates, 
-            // but we might want to update user state.
-            // We can just set user here. The initial load is what matters for isRestoringProgress.
-            if (!isRestoringProgress) {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            console.log('Auth Event:', event);
+            if (event === 'SIGNED_OUT') {
+                setUser(null);
+                setIsApproved(false);
+                setAiContent({});
+                setUserAnswers({});
+                setView('quiz');
+            } else if (!isRestoringProgress) {
                 setUser(session?.user ?? null);
             }
         });

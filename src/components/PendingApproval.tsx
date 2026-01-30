@@ -11,6 +11,7 @@ interface PendingApprovalProps {
 export const PendingApproval: React.FC<PendingApprovalProps> = ({ language }) => {
     const handleLogout = async () => {
         await supabase.auth.signOut();
+        window.location.reload();
     };
 
     return (

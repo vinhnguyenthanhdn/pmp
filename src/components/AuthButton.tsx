@@ -58,6 +58,7 @@ export const AuthButton: React.FC<AuthButtonProps> = () => {
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
+        window.location.reload();
     };
 
     if (!user) {
