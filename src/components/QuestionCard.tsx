@@ -108,29 +108,24 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             </div>
 
             {/* Stats Section */}
-            <div className="stats-dashboard">
-                <div className="stats-row primary">
-                    <div className="stat-box">
-                        <span className="stat-label">Correct Rate</span>
-                        <span className="stat-value highlight">{correctRate}%</span>
-                    </div>
-                    <div className="stat-box">
-                        <span className="stat-label">Answered</span>
-                        <span className="stat-value">{totalAnswered}</span>
-                    </div>
+            {/* Compact Stats Section */}
+            <div className="stats-dashboard compact">
+                <div className="stat-group main">
+                    <span className="stat-label-inline">Correct Rate:</span>
+                    <span className="stat-value-inline highlight">{correctRate}%</span>
                 </div>
-                <div className="stats-row secondary">
-                    <div className="stat-item correct">
-                        <span className="dot"></span>
-                        {correctCount} Correct
+
+                <div className="stat-divider"></div>
+
+                <div className="stat-group details">
+                    <div className="stat-item-inline" title="Correct">
+                        <span className="dot correct"></span> {correctCount}
                     </div>
-                    <div className="stat-item incorrect">
-                        <span className="dot"></span>
-                        {incorrectCount} Incorrect
+                    <div className="stat-item-inline" title="Incorrect">
+                        <span className="dot incorrect"></span> {incorrectCount}
                     </div>
-                    <div className="stat-item pending">
-                        <span className="dot"></span>
-                        {totalQuestions - totalAnswered} Unanswered
+                    <div className="stat-item-inline" title="Unanswered">
+                        <span className="dot pending"></span> {totalQuestions - totalAnswered}
                     </div>
                 </div>
             </div>
