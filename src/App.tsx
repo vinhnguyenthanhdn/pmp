@@ -8,10 +8,11 @@ import { Navigation } from './components/Navigation';
 import { Loading } from './components/Loading';
 import { supabase } from './lib/supabase';
 import { getAIExplanation, getAITheory } from './lib/ai-service';
-import { saveUserProgress, getUserProgress } from './lib/user-service';
+import { saveUserProgress, getUserProgress, checkUserApprovalStatus } from './lib/user-service';
 import { saveUserSubmission } from './lib/history-service';
 import { HistoryPage } from './components/HistoryPage';
 import { LoginRequired } from './components/LoginRequired';
+import { PendingApproval } from './components/PendingApproval';
 import type { User } from '@supabase/supabase-js';
 import type { Question, Language } from './types';
 import './styles/App.css';
@@ -27,6 +28,7 @@ function App() {
     const [activeAISection, setActiveAISection] = useState<'theory' | 'explanation' | null>(null);
     const [aiContent, setAiContent] = useState<Record<string, string>>({});
     const [user, setUser] = useState<User | null>(null);
+    const [isApproved, setIsApproved] = useState(false);
     const [isRestoringProgress, setIsRestoringProgress] = useState(true);
     const [pendingSavedIndex, setPendingSavedIndex] = useState<number | null>(null);
     const [view, setView] = useState<'quiz' | 'history'>('quiz');
@@ -136,11 +138,19 @@ function App() {
             setUser(session?.user ?? null);
 
             if (session?.user) {
-                const savedIndex = await getUserProgress(session.user.id);
+                // Check approval status first
+                const approved = await checkUserApprovalStatus(session.user.id);
+                setIsApproved(approved);
 
-                if (savedIndex !== null) {
-                    setPendingSavedIndex(savedIndex);
+                if (approved) {
+                    const savedIndex = await getUserProgress(session.user.id);
+
+                    if (savedIndex !== null) {
+                        setPendingSavedIndex(savedIndex);
+                    }
                 }
+            } else {
+                setIsApproved(false);
             }
             // Done checking auth/progress
             setIsRestoringProgress(false);
@@ -433,6 +443,8 @@ function App() {
                     />
                 ) : !user ? (
                     <LoginRequired language={language} />
+                ) : !isApproved ? (
+                    <PendingApproval language={language} />
                 ) : (
                     <>
                         <QuestionCard

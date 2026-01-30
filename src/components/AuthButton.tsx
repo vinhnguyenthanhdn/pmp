@@ -54,46 +54,30 @@ export const AuthButton: React.FC<AuthButtonProps> = () => {
         return () => subscription.unsubscribe();
     }, []);
 
-    const handleLogin = async () => {
-        await supabase.auth.signInWithOAuth({
-            provider: 'google',
-            options: {
-                redirectTo: `${window.location.origin}/`,
-                queryParams: {
-                    access_type: 'offline',
-                    prompt: 'select_account',
-                },
-            },
-        });
-    };
+
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
     };
 
+    if (!user) {
+        return null;
+    }
+
     return (
         <div className="auth-container">
-            {user ? (
-                <div className="user-info">
-                    {user.user_metadata.avatar_url && (
-                        <img
-                            src={user.user_metadata.avatar_url}
-                            alt="User Avatar"
-                            className="user-avatar"
-                        />
-                    )}
-                    <button className="auth-btn" onClick={handleLogout}>
-                        Sign Out
-                    </button>
-                </div>
-            ) : (
-                <>
-                    <button className="auth-btn" onClick={handleLogin}>
-                        <span className="google-icon">G</span>
-                        Sign in with Google
-                    </button>
-                </>
-            )}
+            <div className="user-info">
+                {user.user_metadata.avatar_url && (
+                    <img
+                        src={user.user_metadata.avatar_url}
+                        alt="User Avatar"
+                        className="user-avatar"
+                    />
+                )}
+                <button className="auth-btn" onClick={handleLogout}>
+                    Sign Out
+                </button>
+            </div>
         </div>
     );
 };

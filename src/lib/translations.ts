@@ -97,8 +97,8 @@ const translations: Translations = {
         en: 'Sign in to personalize your learning',
     },
     login_required_title: {
-        vi: '👋 Xin chào! Vui lòng đăng nhập',
-        en: '👋 Hello! Please Log In',
+        vi: 'Vui lòng đăng nhập',
+        en: 'Please Log In',
     },
     login_required_desc: {
         vi: 'Bạn cần đăng nhập bằng tài khoản Google để bắt đầu luyện thi PMP và lưu kết quả học tập của mình.',
@@ -107,6 +107,18 @@ const translations: Translations = {
     login_button: {
         vi: 'Đăng nhập bằng Google',
         en: 'Sign in with Google',
+    },
+    pending_approval_title: {
+        vi: '⏳ Tài khoản đang chờ duyệt',
+        en: '⏳ Account Pending Approval',
+    },
+    pending_approval_desc: {
+        vi: 'Cảm ơn bạn đã đăng ký. Tài khoản của bạn đang chờ quản trị viên phê duyệt. Vui lòng quay lại sau.',
+        en: 'Thank you for signing up. Your account is pending approval from an administrator. Please check back later.',
+    },
+    logout: {
+        vi: 'Đăng xuất',
+        en: 'Sign Out',
     },
 };
 

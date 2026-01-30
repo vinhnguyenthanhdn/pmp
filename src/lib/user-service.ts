@@ -38,3 +38,23 @@ export async function getUserProgress(userId: string): Promise<number | null> {
         return null;
     }
 }
+
+export async function checkUserApprovalStatus(userId: string): Promise<boolean> {
+    try {
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('is_approved')
+            .eq('id', userId)
+            .single();
+
+        if (error) {
+            console.warn('Profile not found, defaulting to false approval', error);
+            return false;
+        }
+
+        return data?.is_approved ?? false;
+    } catch (error) {
+        console.error('Error checking approval status:', error);
+        return false;
+    }
+}
