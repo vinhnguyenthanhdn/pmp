@@ -477,6 +477,7 @@ function App() {
                         userId={user.id}
                         questions={questions}
                         onJumpToQuestion={handleJumpToQuestion}
+                        onBack={() => setView('quiz')}
                     />
                 ) : !user ? (
                     <LoginRequired language={language} />
