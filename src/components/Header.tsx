@@ -1,6 +1,7 @@
 import React from 'react';
 import { LanguageSelector } from './LanguageSelector';
 import { AuthButton } from './AuthButton';
+import { UserMenu } from './UserMenu';
 import type { Language } from '../types';
 import '../styles/Header.css';
 
@@ -31,50 +32,34 @@ export const Header: React.FC<HeaderProps> = ({
                 <div className="header-content">
                     {/* Controls Row: Auth & Navigation */}
                     <div className="header-controls">
-                        {user && onHistoryClick && (
-                            <div className="history-actions">
-                                {isAdmin && (
-                                    <button
-                                        className={`btn-history ${isAdminView ? 'active' : ''}`}
-                                        onClick={onAdminClick}
-                                    >
-                                        {isAdminView ? 'Back to Quiz' : 'Admin'}
-                                    </button>
-                                )}
-
-                                {!isAdminView && (
-                                    <button
-                                        className={`btn-history ${isHistoryView ? 'active' : ''}`}
-                                        onClick={onHistoryClick}
-                                    >
-                                        {isHistoryView ? (
-                                            <>
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                    <line x1="19" y1="12" x2="5" y2="12"></line>
-                                                    <polyline points="12 19 5 12 12 5"></polyline>
-                                                </svg>
-                                                Back to Quiz
-                                            </>
-                                        ) : (
-                                            <>
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                    <circle cx="12" cy="12" r="10"></circle>
-                                                    <polyline points="12 6 12 12 16 14"></polyline>
-                                                </svg>
-                                                My History
-                                            </>
-                                        )}
-                                    </button>
-                                )}
-                            </div>
+                        {user ? (
+                            <UserMenu
+                                user={user}
+                                isAdmin={isAdmin}
+                                isAdminView={isAdminView}
+                                isHistoryView={isHistoryView}
+                                onAdminClick={onAdminClick}
+                                onHistoryClick={onHistoryClick}
+                                currentLanguage={currentLanguage}
+                                onLanguageChange={onLanguageChange}
+                            />
+                        ) : (
+                            // Empty div or nothing on left side for guest? 
+                            // Actually AuthButton is usually on right or center. 
+                            // If guest, we just show AuthButton.
+                            null
                         )}
-                        <AuthButton currentLanguage={currentLanguage} />
+
+                        {/* If guest, show AuthButton separately. If user, UserMenu handles logout */}
+                        {!user && <AuthButton currentLanguage={currentLanguage} />}
                     </div>
 
-                    <LanguageSelector
-                        currentLanguage={currentLanguage}
-                        onLanguageChange={onLanguageChange}
-                    />
+                    {!user && (
+                        <LanguageSelector
+                            currentLanguage={currentLanguage}
+                            onLanguageChange={onLanguageChange}
+                        />
+                    )}
                     <h1 className="app-title">
                         PMP Exam Master
                     </h1>
