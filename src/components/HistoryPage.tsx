@@ -115,7 +115,7 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
                     </div>
                     <div className="history-stats">
                         <span className="stat-item">
-                            <strong>{passRate}%</strong> Pass Rate
+                            <strong>{passRate}%</strong> Correct Rate
                         </span>
                         <span className="stat-divider">•</span>
                         <span className="stat-item">
