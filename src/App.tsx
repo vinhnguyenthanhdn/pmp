@@ -11,6 +11,7 @@ import { getAIExplanation, getAITheory } from './lib/ai-service';
 import { saveUserProgress, getUserProgress } from './lib/user-service';
 import { saveUserSubmission } from './lib/history-service';
 import { HistoryPage } from './components/HistoryPage';
+import { LoginRequired } from './components/LoginRequired';
 import type { User } from '@supabase/supabase-js';
 import type { Question, Language } from './types';
 import './styles/App.css';
@@ -21,6 +22,7 @@ function App() {
     const [language, setLanguage] = useState<Language>('vi');
     const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
     const [loading, setLoading] = useState(true);
+    const [authLoading, setAuthLoading] = useState(true);
     const [aiLoading, setAiLoading] = useState(false);
     const [activeAISection, setActiveAISection] = useState<'theory' | 'explanation' | null>(null);
     const [aiContent, setAiContent] = useState<Record<string, string>>({});
@@ -142,6 +144,7 @@ function App() {
             }
             // Done checking auth/progress
             setIsRestoringProgress(false);
+            setAuthLoading(false);
         };
 
         // We need to know if we are waiting for auth
@@ -385,7 +388,7 @@ function App() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     };
-    if (loading) {
+    if (loading || authLoading) {
         return (
             <div className="app">
                 <Loading message="Setting up your PMP Exam Preparation..." />
@@ -428,6 +431,8 @@ function App() {
                         questions={questions}
                         onJumpToQuestion={handleJumpToQuestion}
                     />
+                ) : !user ? (
+                    <LoginRequired language={language} />
                 ) : (
                     <>
                         <QuestionCard
@@ -474,7 +479,7 @@ function App() {
             </main>
 
             <Footer />
-        </div>
+        </div >
     );
 }
 

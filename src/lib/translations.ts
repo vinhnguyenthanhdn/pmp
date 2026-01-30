@@ -96,6 +96,18 @@ const translations: Translations = {
         vi: 'Đăng nhập để cá nhân hóa quá trình học',
         en: 'Sign in to personalize your learning',
     },
+    login_required_title: {
+        vi: '👋 Xin chào! Vui lòng đăng nhập',
+        en: '👋 Hello! Please Log In',
+    },
+    login_required_desc: {
+        vi: 'Bạn cần đăng nhập bằng tài khoản Google để bắt đầu luyện thi PMP và lưu kết quả học tập của mình.',
+        en: 'You need to sign in with your Google account to start practicing for PMP and save your progress.',
+    },
+    login_button: {
+        vi: 'Đăng nhập bằng Google',
+        en: 'Sign in with Google',
+    },
 };
 
 export function getText(language: Language, key: string): string {
