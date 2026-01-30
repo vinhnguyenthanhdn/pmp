@@ -147,9 +147,9 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
                                 </td>
                                 <td style={{ textAlign: 'center' }}>
                                     <span className={`pass-rate ${(user.pass_rate || 0) >= 70 ? 'high' :
-                                            (user.pass_rate || 0) >= 50 ? 'medium' : 'low'
+                                        (user.pass_rate || 0) >= 50 ? 'medium' : 'low'
                                         }`}>
-                                        {user.pass_rate || 0}%
+                                        {(user.pass_rate || 0).toFixed(2)}%
                                     </span>
                                 </td>
                                 <td>

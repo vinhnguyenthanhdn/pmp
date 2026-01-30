@@ -91,15 +91,20 @@ export async function getAllUsers(): Promise<UserProfile[]> {
 
         if (usersError) throw usersError;
 
+        // Get total question count for pass rate calculation
+        const { count: totalQuestions } = await supabase
+            .from('pmp_questions')
+            .select('*', { count: 'exact', head: true });
+
+        const effectiveTotal = totalQuestions || 0;
+
         // Fetch all submissions to calculate stats
-        // Optimizing by only selecting necessary columns
         const { data: submissions, error: submissionsError } = await supabase
             .from('pmp_user_submissions')
             .select('user_id, is_correct');
 
         if (submissionsError) {
             console.error('Error fetching submissions for stats:', submissionsError);
-            // Return users without stats if submissions fetch fails
             return users as UserProfile[];
         }
 
@@ -120,9 +125,14 @@ export async function getAllUsers(): Promise<UserProfile[]> {
         const usersWithStats = users.map(user => {
             const stats = userStats[user.id] || { correct: 0, total: 0 };
             const wrong = stats.total - stats.correct;
-            const rate = stats.total > 0
-                ? Math.round((stats.correct / stats.total) * 100)
+
+            // Calculate pass rate based on TOTAL questions in DB
+            const rawRate = effectiveTotal > 0
+                ? (stats.correct / effectiveTotal) * 100
                 : 0;
+
+            // Round to 2 decimal places
+            const rate = Math.round(rawRate * 100) / 100;
 
             return {
                 ...user,
