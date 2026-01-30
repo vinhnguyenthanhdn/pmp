@@ -6,6 +6,10 @@ export interface UserProfile {
     is_approved: boolean;
     role: string;
     created_at?: string;
+    total_answers?: number;
+    correct_answers?: number;
+    wrong_answers?: number;
+    pass_rate?: number;
 }
 
 export async function saveUserProgress(userId: string, index: number) {
@@ -79,14 +83,57 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
 
 export async function getAllUsers(): Promise<UserProfile[]> {
     try {
-        const { data, error } = await supabase
+        // Fetch users
+        const { data: users, error: usersError } = await supabase
             .from('profiles')
             .select('*')
             .order('created_at', { ascending: false });
 
-        if (error) throw error;
+        if (usersError) throw usersError;
 
-        return data as UserProfile[];
+        // Fetch all submissions to calculate stats
+        // Optimizing by only selecting necessary columns
+        const { data: submissions, error: submissionsError } = await supabase
+            .from('pmp_user_submissions')
+            .select('user_id, is_correct');
+
+        if (submissionsError) {
+            console.error('Error fetching submissions for stats:', submissionsError);
+            // Return users without stats if submissions fetch fails
+            return users as UserProfile[];
+        }
+
+        // Calculate stats per user
+        const userStats: Record<string, { correct: number; total: number }> = {};
+
+        submissions?.forEach(sub => {
+            if (!userStats[sub.user_id]) {
+                userStats[sub.user_id] = { correct: 0, total: 0 };
+            }
+            userStats[sub.user_id].total++;
+            if (sub.is_correct) {
+                userStats[sub.user_id].correct++;
+            }
+        });
+
+        // Merge stats into user profiles
+        const usersWithStats = users.map(user => {
+            const stats = userStats[user.id] || { correct: 0, total: 0 };
+            const wrong = stats.total - stats.correct;
+            const rate = stats.total > 0
+                ? Math.round((stats.correct / stats.total) * 100)
+                : 0;
+
+            return {
+                ...user,
+                total_answers: stats.total,
+                correct_answers: stats.correct,
+                wrong_answers: wrong,
+                pass_rate: rate
+            };
+        });
+
+        return usersWithStats as UserProfile[];
     } catch (error) {
         console.error('Error getting all users:', error);
         return [];

@@ -222,3 +222,37 @@
         border-left: none;
     }
 }
+/* Statistics Columns */
+.users-table .stat-value {
+    font-weight: 600;
+}
+
+.users-table .stat-value.correct {
+    color: var(--color-success);
+}
+
+.users-table .stat-value.wrong {
+    color: var(--color-error);
+}
+
+.pass-rate {
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.pass-rate.high {
+    color: var(--color-success);
+    background-color: var(--color-success-light);
+}
+
+.pass-rate.medium {
+    color: #d97706;
+    background-color: rgba(245, 158, 11, 0.2);
+}
+
+.pass-rate.low {
+    color: var(--color-error);
+    background-color: var(--color-error-light);
+}
