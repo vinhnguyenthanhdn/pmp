@@ -4,8 +4,8 @@
 
 const HUGGINGFACE_API_KEY = process.env.HUGGINGFACE_API_KEY || process.env.VITE_HUGGINGFACE_API_KEY || '';
 const HF_MODEL = process.env.HF_MODEL || process.env.VITE_HF_MODEL || "meta-llama/Llama-3.1-70B-Instruct";
-// OpenAI-compatible endpoint
-const HF_API_URL = `https://api-inference.huggingface.co/models/${HF_MODEL}/v1/chat/completions`;
+// OpenAI-compatible endpoint via Router (REQUIRED due to deprecation of api-inference)
+const HF_API_URL = "https://router.huggingface.co/hf-inference/v1/chat/completions";
 
 export default async function handler(req, res) {
     // 1. CORS Headers
