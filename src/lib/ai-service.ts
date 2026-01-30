@@ -18,7 +18,7 @@ interface HFChatResponse {
 const VITE_HUGGINGFACE_API_KEY = import.meta.env.VITE_HUGGINGFACE_API_KEY || '';
 const VITE_HF_MODEL = import.meta.env.VITE_HF_MODEL || "meta-llama/Llama-3.1-70B-Instruct";
 // OpenAI-compatible endpoint for Direct Fallback
-const HF_DIRECT_API_URL = "https://router.huggingface.co/hf-inference/v1/chat/completions";
+const HF_DIRECT_API_URL = `https://api-inference.huggingface.co/models/${VITE_HF_MODEL}/v1/chat/completions`;
 
 async function callDirectHuggingFaceAPI(messages: HFMessage[]): Promise<string> {
     if (!VITE_HUGGINGFACE_API_KEY) {
