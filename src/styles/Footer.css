@@ -5,13 +5,6 @@
     border-top: 2px solid var(--color-border);
 }
 
-@media (max-width: 768px) {
-    .app-footer {
-        padding: var(--space-md) 0;
-        margin-top: var(--space-lg);
-    }
-}
-
 .footer-content {
     text-align: center;
 }
@@ -20,12 +13,15 @@
     font-size: 1rem;
     color: var(--color-text-secondary);
     margin-bottom: var(--space-sm);
+    line-height: 1.5;
 }
 
 .footer-contact {
     font-size: 0.9rem;
     color: var(--color-text-secondary);
     margin: 0;
+    word-break: break-all;
+    /* Ensure email doesn't overflow */
 }
 
 .footer-contact a {
@@ -38,4 +34,22 @@
 .footer-contact a:hover {
     color: var(--color-primary-dark);
     text-decoration: underline;
+}
+
+/* === MOBILE RESPONSIVE === */
+@media (max-width: 768px) {
+    .app-footer {
+        padding: var(--space-lg) 0;
+        margin-top: var(--space-lg);
+    }
+
+    .footer-text {
+        font-size: 0.9rem;
+        padding: 0 0.5rem;
+        /* Extra safe padding */
+    }
+
+    .footer-contact {
+        font-size: 0.85rem;
+    }
 }

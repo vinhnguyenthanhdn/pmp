@@ -5,10 +5,13 @@
     margin-bottom: var(--space-2xl);
     box-shadow: var(--shadow-lg);
     position: relative;
+    z-index: 10;
 }
 
 .header-content {
     text-align: center;
+    position: relative;
+    /* Ensure stacking context */
 }
 
 .app-title {
@@ -16,11 +19,11 @@
     font-weight: 800;
     margin-bottom: var(--space-sm);
     display: inline-flex;
-    /* Changed from flex to center properly */
     align-items: center;
     justify-content: center;
     gap: var(--space-md);
     color: white;
+    line-height: 1.2;
 }
 
 .title-icon {
@@ -35,27 +38,36 @@
     margin: 0;
 }
 
-/* New wrapper for Auth & History */
+/* Wrapper for Auth & History buttons */
 .header-controls {
     position: absolute;
-    top: 1rem;
+    top: 0;
+    /* Align to top relative to header-content, but wait header-content has no height set? */
+    /* header-content is inside container, which allows it to flow. 
+       Usually header-controls was top: 1rem relative to .app-header?
+       Previous CSS had relative on .app-header.
+       Let's keep it absolute relative to .app-header if we can content-wise to match design.
+       But .header-content wrapper is better for responsiveness. 
+       Let's make .header-content static for desktop to let controls position relative to .app-header?
+       Or make .header-content relative and width 100%.
+    */
+    top: -1.5rem;
+    /* Pull it up a bit or keep it at top of container */
     left: 0;
     right: 0;
-    padding: 0 1rem;
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
     pointer-events: none;
-    /* Let clicks pass through empty space */
+    z-index: 20;
 }
 
-/* Re-enable pointer events for the children */
+/* Re-enable pointer events for buttons */
 .header-controls>* {
     pointer-events: auto;
 }
 
 .history-actions {
-    /* Position handled by header-controls now */
     display: flex;
     align-items: center;
 }
@@ -90,6 +102,7 @@
     font-weight: 700;
 }
 
+/* === MOBILE RESPONSIVE === */
 @media (max-width: 768px) {
     .app-header {
         padding: var(--space-lg) 0;
@@ -98,34 +111,56 @@
     .header-content {
         display: flex;
         flex-direction: column;
+        align-items: center;
+        gap: var(--space-md);
     }
 
-    /* Order 1: Title */
+    /* 1. Title at Top */
     .app-title {
         order: 1;
         font-size: 1.75rem;
-        display: flex;
         flex-direction: column;
-        gap: 0;
-        margin-bottom: var(--space-sm);
-    }
-
-    /* Order 2: Controls (Auth + History) */
-    .header-controls {
+        gap: var(--space-xs);
+        margin-bottom: var(--space-xs);
         position: static;
-        order: 2;
-        padding: 0;
-        margin-top: var(--space-md);
-        justify-content: center;
         width: 100%;
-        gap: var(--space-sm);
-        flex-wrap: wrap;
+        text-align: center;
     }
 
-    /* Order 3: Language Selector */
-    /* Target the div rendered by the component */
-    .header-content>.language-selector {
+    .title-icon {
+        font-size: 2rem;
+    }
+
+    /* 2. Subtitle */
+    .app-subtitle {
+        order: 2;
+        font-size: 1rem;
+        margin-bottom: var(--space-sm);
+        text-align: center;
+        width: 100%;
+    }
+
+    /* 3. Controls (Buttons) */
+    .header-controls {
         order: 3;
-        margin-top: var(--space-sm);
+        position: static;
+        /* Back to flow */
+        width: 100%;
+        justify-content: center;
+        gap: var(--space-md);
+        flex-wrap: wrap;
+        margin: 0;
+        pointer-events: auto;
+        /* Ensure clickable */
+        top: auto;
+    }
+
+    /* 4. Language Selector */
+    /* Note: In React component, LanguageSelector is separate div */
+    .header-content>.language-selector {
+        order: 4;
+        margin: 0;
+        width: 100%;
+        justify-content: center;
     }
 }
