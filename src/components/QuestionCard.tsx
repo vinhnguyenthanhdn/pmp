@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { Question, Language } from '../types';
 import { getText } from '../lib/translations';
 import '../styles/QuestionCard.css';
+import '../styles/QuestionCardStats.css';
 
 interface QuestionCardProps {
     question: Question;
@@ -13,6 +14,8 @@ interface QuestionCardProps {
     onRequestTheory: () => void;
     onRequestExplanation: () => void;
     loadingAction: 'theory' | 'explanation' | null;
+    userAnswers: Record<string, string>;
+    allQuestions: Question[];
 }
 
 export const QuestionCard: React.FC<QuestionCardProps> = ({
@@ -25,6 +28,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     onRequestTheory,
     onRequestExplanation,
     loadingAction,
+    userAnswers: allUserAnswers,
+    allQuestions
 }) => {
     const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
 
@@ -66,6 +71,27 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     const isCorrect = userAnswer === question.correct_answer;
     const hasAnswered = !!userAnswer;
 
+    // Calculate Stats
+    const totalAnswered = Object.keys(allUserAnswers).length;
+    let correctCount = 0;
+
+    // Performance optimization: Create a map for fast lookup if needed, 
+    // but usually find is fast enough for <2000 items. 
+    // However, iterating userAnswers (smaller set) is better.
+    Object.entries(allUserAnswers).forEach(([qId, ans]) => {
+        // find question by ID. 
+        // Note: questions are sorted or available.
+        const q = allQuestions.find(q => q.id === qId);
+        if (q && q.correct_answer === ans) {
+            correctCount++;
+        }
+    });
+
+    const incorrectCount = totalAnswered - correctCount;
+    const correctRate = totalAnswered > 0
+        ? Math.round((correctCount / totalAnswered) * 100)
+        : 0;
+
     return (
         <div className="question-card card fade-in">
             {/* Header */}
@@ -78,6 +104,34 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                         className="progress-fill"
                         style={{ width: `${(questionNumber / totalQuestions) * 100}%` }}
                     />
+                </div>
+            </div>
+
+            {/* Stats Section */}
+            <div className="stats-dashboard">
+                <div className="stats-row primary">
+                    <div className="stat-box">
+                        <span className="stat-label">Correct Rate</span>
+                        <span className="stat-value highlight">{correctRate}%</span>
+                    </div>
+                    <div className="stat-box">
+                        <span className="stat-label">Answered</span>
+                        <span className="stat-value">{totalAnswered}</span>
+                    </div>
+                </div>
+                <div className="stats-row secondary">
+                    <div className="stat-item correct">
+                        <span className="dot"></span>
+                        {correctCount} Correct
+                    </div>
+                    <div className="stat-item incorrect">
+                        <span className="dot"></span>
+                        {incorrectCount} Incorrect
+                    </div>
+                    <div className="stat-item pending">
+                        <span className="dot"></span>
+                        {totalQuestions - totalAnswered} Unanswered
+                    </div>
                 </div>
             </div>
 

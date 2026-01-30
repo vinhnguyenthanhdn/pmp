@@ -474,6 +474,8 @@ function App() {
                             onRequestTheory={handleRequestTheory}
                             onRequestExplanation={handleRequestExplanation}
                             loadingAction={aiLoading ? activeAISection : null}
+                            userAnswers={userAnswers}
+                            allQuestions={questions}
                         />
 
                         {aiLoading && <Loading message="AI is thinking..." />}
