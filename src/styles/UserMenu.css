@@ -48,7 +48,8 @@
 .user-menu-dropdown {
     position: absolute;
     top: 100%;
-    left: 0;
+    right: 0;
+    left: auto;
     margin-top: 10px;
     min-width: 220px;
     background: var(--color-bg-card);
@@ -64,7 +65,8 @@
     content: '';
     position: absolute;
     top: -6px;
-    left: 14px;
+    right: 14px;
+    left: auto;
     width: 12px;
     height: 12px;
     background: var(--color-bg-card);
