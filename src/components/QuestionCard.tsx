@@ -97,7 +97,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             {/* Header */}
             <div className="question-header">
                 <h2>
-                    {t('question_header')} {questionNumber} {t('of')} {totalQuestions}
+                    {t('question_header')} {questionNumber}
                 </h2>
                 <div className="progress-bar">
                     <div
@@ -118,14 +118,14 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 <div className="stat-divider"></div>
 
                 <div className="stat-group details">
-                    <div className="stat-item-inline" title="Correct">
-                        <span className="dot correct"></span> {correctCount}
+                    <div className="stat-item-inline" title="Correct Answers">
+                        <span className="dot correct"></span> {correctCount} Correct
                     </div>
-                    <div className="stat-item-inline" title="Incorrect">
-                        <span className="dot incorrect"></span> {incorrectCount}
+                    <div className="stat-item-inline" title="Incorrect Answers">
+                        <span className="dot incorrect"></span> {incorrectCount} Incorrect
                     </div>
-                    <div className="stat-item-inline" title="Unanswered">
-                        <span className="dot pending"></span> {totalQuestions - totalAnswered}
+                    <div className="stat-item-inline" title="Unanswered Questions">
+                        <span className="dot pending"></span> {totalQuestions - totalAnswered} Left
                     </div>
                 </div>
             </div>

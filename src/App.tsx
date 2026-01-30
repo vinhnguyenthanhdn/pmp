@@ -9,7 +9,7 @@ import { Loading } from './components/Loading';
 import { supabase } from './lib/supabase';
 import { getAIExplanation, getAITheory } from './lib/ai-service';
 import { saveUserProgress, getUserProgress } from './lib/user-service';
-import { saveUserSubmission } from './lib/history-service';
+import { saveUserSubmission, getUserSubmissions } from './lib/history-service';
 import { HistoryPage } from './components/HistoryPage';
 import { LoginRequired } from './components/LoginRequired';
 import { PendingApproval } from './components/PendingApproval';
@@ -154,6 +154,26 @@ function App() {
 
                     if (savedIndex !== null) {
                         setPendingSavedIndex(savedIndex);
+                    }
+
+                    // Load submission history to sync stats
+                    const submissions = await getUserSubmissions(session.user.id);
+                    if (submissions && submissions.length > 0) {
+                        const historyMap: Record<string, string> = {};
+                        // Process chronological (or reverse) to get latest answer
+                        // getUserSubmissions returns DESC by submitted_at (latest first)
+                        // So we can iterate and set if not exists, or iterate reverse.
+                        // Since it's DESC, the first one encountered for a QID is the latest.
+                        for (const sub of submissions) {
+                            if (!historyMap[sub.question_id]) {
+                                historyMap[sub.question_id] = sub.user_answer;
+                            }
+                        }
+
+                        // Merge with local storage (local might have newer unsynced? 
+                        // Or just prefer DB? Let's generic merge, DB dictates "Official" history but local might be in-progress.)
+                        // Actually, if we want accurate stats based on "What I did", DB is source of truth.
+                        setUserAnswers(prev => ({ ...prev, ...historyMap }));
                     }
                 }
             } else {

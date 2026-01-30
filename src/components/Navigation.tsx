@@ -66,7 +66,7 @@ export const Navigation: React.FC<NavigationProps> = ({
                 </form>
 
                 <button
-                    className="btn btn-secondary"
+                    className="btn btn-secondary nav-next"
                     onClick={onNext}
                     disabled={!canGoNext}
                 >
