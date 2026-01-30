@@ -1,21 +1,9 @@
 import { supabase } from './supabase';
 import type { Language } from '../types';
 
-// Hugging Face Configuration
-const HUGGINGFACE_API_KEY = import.meta.env.VITE_HUGGINGFACE_API_KEY || '';
-const HF_MODEL = import.meta.env.VITE_HF_MODEL || "meta-llama/Llama-3.1-70B-Instruct";
-const HF_API_URL = `https://api-inference.huggingface.co/models/${HF_MODEL}/v1/chat/completions`;
-
 interface HFMessage {
     role: 'system' | 'user' | 'assistant';
     content: string;
-}
-
-interface HFChatRequest {
-    model: string;
-    messages: HFMessage[];
-    max_tokens: number;
-    temperature: number;
 }
 
 interface HFChatResponse {
@@ -27,12 +15,8 @@ interface HFChatResponse {
 }
 
 async function callHuggingFaceAPI(prompt: string): Promise<string> {
-    if (!HUGGINGFACE_API_KEY) {
-        throw new Error('No Hugging Face API Key configured');
-    }
-
     try {
-        console.log(`🤖 Calling Hugging Face API with model: ${HF_MODEL}...`);
+        console.log(`🤖 Calling Hugging Face API via proxy...`);
 
         const messages: HFMessage[] = [
             {
@@ -45,45 +29,44 @@ async function callHuggingFaceAPI(prompt: string): Promise<string> {
             }
         ];
 
-        const requestBody: HFChatRequest = {
-            model: HF_MODEL,
-            messages: messages,
-            max_tokens: 2000,
-            temperature: 0.1 // Low temperature for logical and consistent responses
-        };
+        // Use proxy API endpoint (works in both dev and production)
+        const apiUrl = '/api/ai';
 
-        const response = await fetch(HF_API_URL, {
+        const response = await fetch(apiUrl, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${HUGGINGFACE_API_KEY}`,
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(requestBody)
+            body: JSON.stringify({
+                messages: messages,
+                max_tokens: 2000,
+                temperature: 0.1
+            })
         });
 
         if (!response.ok) {
-            const errorText = await response.text();
-            console.error(`❌ Hugging Face API error (${response.status}):`, errorText);
+            const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+            console.error(`❌ Proxy API error (${response.status}):`, errorData);
 
             // Check for rate limiting or service unavailable
-            if (response.status === 429 || response.status === 503) {
+            if (response.status === 503 || errorData.error === 'AI_SERVICE_UNAVAILABLE') {
                 throw new Error('AI_SERVICE_UNAVAILABLE');
             }
 
-            throw new Error(`Hugging Face API error: ${response.status} - ${errorText}`);
+            throw new Error(`Proxy API error: ${response.status} - ${errorData.error || 'Unknown'}`);
         }
 
         const data: HFChatResponse = await response.json();
 
         if (!data.choices || data.choices.length === 0) {
-            console.error('❌ No choices in Hugging Face response');
+            console.error('❌ No choices in API response');
             throw new Error('No response generated');
         }
 
         const text = data.choices[0].message.content;
 
         if (!text || text.trim() === '') {
-            console.error('❌ Empty response from Hugging Face');
+            console.error('❌ Empty response from API');
             throw new Error('Empty response generated');
         }
 
