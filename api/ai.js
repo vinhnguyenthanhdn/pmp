@@ -1,12 +1,14 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+// JavaScript serverless function for Vercel
+// Vercel handles compilation for JS/TS in /api easily.
+// Make sure to select Node.js 18.x+ in Vercel settings.
 
-// Support both standard env vars and Vite-prefixed ones (just in case)
 const HUGGINGFACE_API_KEY = process.env.HUGGINGFACE_API_KEY || process.env.VITE_HUGGINGFACE_API_KEY || '';
 const HF_MODEL = process.env.HF_MODEL || process.env.VITE_HF_MODEL || "meta-llama/Llama-3.1-70B-Instruct";
+// New endpoint per Hugging Face 410 error
 const HF_API_URL = `https://router.huggingface.co/hf-inference/models/${HF_MODEL}/v1/chat/completions`;
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-    // Enable CORS
+export default async function handler(req, res) {
+    // 1. CORS Headers
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -15,37 +17,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
     );
 
-    // Handle preflight request
+    // 2. Handle Options
     if (req.method === 'OPTIONS') {
         return res.status(200).end();
     }
 
-    // Only allow POST
+    // 3. Only POST
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
     try {
-        // Debug logging
-        console.log('API Request received');
-        console.log('Model:', HF_MODEL);
-        console.log('API Key configured:', !!HUGGINGFACE_API_KEY); // Log true/false only for security
+        console.log(`[API] Processing request for model: ${HF_MODEL}`);
 
-        // Validate API key
         if (!HUGGINGFACE_API_KEY) {
-            console.error('Missing HUGGINGFACE_API_KEY');
-            return res.status(500).json({ error: 'Hugging Face API key not configured on server' });
+            console.error('[API] Error: Missing HUGGINGFACE_API_KEY');
+            return res.status(500).json({ error: 'Server configuration error: Missing API Key' });
         }
 
         const { messages, max_tokens = 2000, temperature = 0.1 } = req.body;
 
         if (!messages || !Array.isArray(messages)) {
-            return res.status(400).json({ error: 'Invalid request: messages array required' });
+            return res.status(400).json({ error: 'Invalid request body' });
         }
 
-        console.log(`Calling Hugging Face API: ${HF_API_URL}`);
+        console.log(`[API] Calling external HF API: ${HF_API_URL}`);
 
-        // Call Hugging Face API
+        // Native fetch (Node 18+)
         const response = await fetch(HF_API_URL, {
             method: 'POST',
             headers: {
@@ -62,19 +60,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error(`Hugging Face API error (${response.status}):`, errorText);
+            console.error(`[API] HF Error ${response.status}:`, errorText);
 
-            // Check for rate limiting or service unavailable
             if (response.status === 429 || response.status === 503) {
-                return res.status(503).json({
-                    error: 'AI_SERVICE_UNAVAILABLE',
-                    message: 'AI service is currently overloaded. Please try again later.',
-                    details: errorText
-                });
+                return res.status(503).json({ error: 'AI_SERVICE_UNAVAILABLE', details: errorText });
             }
 
             return res.status(response.status).json({
-                error: 'Hugging Face API error',
+                error: 'Upstream API Error',
                 details: errorText
             });
         }
@@ -82,19 +75,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const data = await response.json();
 
         if (!data.choices || data.choices.length === 0) {
-            console.error('Hugging Face returned no choices');
-            return res.status(500).json({ error: 'No response generated from AI provider' });
+            return res.status(500).json({ error: 'No content generated' });
         }
 
-        // Return the response
         return res.status(200).json(data);
 
-    } catch (error: any) {
-        console.error('Internal Server Error in /api/ai:', error);
+    } catch (error) {
+        console.error('[API] Internal Error:', error);
         return res.status(500).json({
-            error: 'Internal server error',
-            message: error?.message || 'Unknown error',
-            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+            error: 'Internal Server Error',
+            message: error.message
         });
     }
 }
