@@ -1,23 +1,20 @@
-#!/usr/bin/env python3
 """
-Fast PMP AI Cache Builder - Parallel Processing
-------------------------------------------------
-Sử dụng concurrent processing để cache nhiều câu hỏi cùng lúc.
-Nhanh hơn 5-10 lần so với version tuần tự.
-
-Cách sử dụng:
-    python cache_ai_fast.py 1-100           # Cache câu 1-100 với 5 workers
-    python cache_ai_fast.py 1-100 --workers 10  # Dùng 10 workers (nhanh hơn)
-    python cache_ai_fast.py 1-100 --lang en     # Tiếng Anh
-    python cache_ai_fast.py 1-100 --force       # Ghi đè cache cũ
+PMP AI Cache Builder - Version 2.1 (Enhanced Logic & Professional Analysis)
+---------------------------------------------------------------------
+- Role: Senior PMP Mentor (PMBOK 7 & Agile Practice Guide)
+- Features: 
+    + Strict English technical terms with Vietnamese explanations.
+    + Forced correct answer alignment from Database.
+    + JSON options parsing & clean formatting.
+    + Deep situational analysis.
 """
 
 import os
 import sys
 import argparse
 import time
-from typing import Optional
-from concurrent.futures import ThreadPoolExecutor, as_completed
+import json
+from typing import Optional, List, Dict
 from dotenv import load_dotenv
 import httpx
 
@@ -25,26 +22,20 @@ try:
     from huggingface_hub import InferenceClient
 except ImportError:
     print("❌ Error: Module 'huggingface_hub' chưa được cài đặt.")
-    print("   Vui lòng chạy: pip install huggingface_hub")
+    print("   Vui lòng chạy: pip install huggingface_hub python-dotenv httpx")
     sys.exit(1)
 
-# Load environment variables
-load_dotenv('.env.local')
+# --- 1. CẤU HÌNH HỆ THỐNG ---
 load_dotenv()
 
-# Configuration
 SUPABASE_URL = os.getenv('VITE_SUPABASE_URL') or os.getenv('SUPABASE_URL')
 SUPABASE_KEY = os.getenv('VITE_SUPABASE_ANON_KEY') or os.getenv('SUPABASE_KEY')
 HUGGINGFACE_API_KEY = os.getenv('HUGGINGFACE_API_KEY')
-HF_MODEL = os.getenv('HF_MODEL') or "Qwen/Qwen2.5-7B-Instruct"
+# Khuyến nghị Qwen2.5-72B để tuân thủ định dạng tốt nhất
+HF_MODEL = os.getenv('HF_MODEL') or "meta-llama/Llama-3.1-70B-Instruct"
 
-# Validate
-if not SUPABASE_URL or not SUPABASE_KEY:
-    print("❌ Error: SUPABASE_URL và SUPABASE_KEY chưa được cấu hình!")
-    sys.exit(1)
-
-if not HUGGINGFACE_API_KEY:
-    print("❌ Error: HUGGINGFACE_API_KEY chưa được cấu hình!")
+if not all([SUPABASE_URL, SUPABASE_KEY, HUGGINGFACE_API_KEY]):
+    print("❌ Error: Thiếu cấu hình .env (SUPABASE_URL, SUPABASE_KEY, HUGGINGFACE_API_KEY)!")
     sys.exit(1)
 
 HEADERS = {
@@ -54,425 +45,194 @@ HEADERS = {
     'Prefer': 'return=minimal'
 }
 
-# Shared HTTP client for better performance
-http_client = httpx.Client(timeout=60.0)
+# --- 2. LOGIC PROMPT TỐI ƯU ---
 
 def get_theory_prompt(question: str, options: str, language: str) -> str:
-    """Tạo prompt cho Theory"""
-    language_instruction = 'Vui lòng trả lời bằng tiếng Việt.' if language == 'vi' else 'Please respond in English.'
+    target_lang = "Tiếng Việt" if language == 'vi' else "English"
     
-    if language == 'vi':
-        prompt_structure = """## Dịch câu hỏi sang tiếng Việt
-
-Dịch câu hỏi chính sang tiếng Việt một cách chính xác và dễ hiểu.
-
-Sau đó dịch TỪNG đáp án dưới dạng DANH SÁCH (bullet list):
-
-- **A.** [Bản dịch đáp án A]
-- **B.** [Bản dịch đáp án B]
-- **C.** [Bản dịch đáp án C]
-- **D.** [Bản dịch đáp án D]
-
-## Cơ sở lý thuyết các thuật ngữ trong câu hỏi
-
-Liệt kê và giải thích TẤT CẢ các PMP concepts, processes, knowledge areas, và thuật ngữ quản lý dự án được đề cập trong câu hỏi.
-
-Định dạng cho mỗi thuật ngữ:
-- **Tên thuật ngữ** (in đậm, không có dấu hai chấm)
-- Giải thích ngắn gọn và đầy đủ về thuật ngữ đó theo PMBOK Guide (trên dòng mới)
-
-## Cơ sở lý thuyết các thuật thuật ngữ trong đáp án
-
-Liệt kê và giải thích TẤT CẢ các PMP concepts, processes, và thuật ngữ quản lý dự án xuất hiện trong các đáp án (A, B, C, D).
-
-Định dạng cho mỗi thuật ngữ:
-- **Tên thuật ngữ** (in đậm, không có dấu hai chấm)
-- Giải thích ngắn gọn và đầy đủ về thuật ngữ đó theo PMBOK Guide (trên dòng mới)"""
-        
-        formatting_rules = """FORMATTING RULES (DO NOT include these rules in your response):
-- Each answer option must be a bullet point, NOT a heading
-- Do NOT use colons after term names
-- Do NOT create separate headings for answer options
-- Start directly with content sections"""
-    else:
-        prompt_structure = """## Theoretical Foundation of Question Terms
-
-List and explain ALL PMP concepts, processes, knowledge areas, and project management terms mentioned in the question.
-
-Format for each term:
-- **Term name** (bold, NO colon)
-- Concise but thorough explanation based on PMBOK Guide (on new line)
-
-## Theoretical Foundation of Answer Terms
-
-List and explain ALL PMP concepts, processes, and project management terms appearing in the answers (A, B, C, D).
-
-Format for each term:
-- **Term name** (bold, NO colon)
-- Concise but thorough explanation based on PMBOK Guide (on new line)"""
-        
-        formatting_rules = """FORMATTING RULES (DO NOT include these rules in your response):
-- Do NOT use colons after term names
-- Start directly with content sections"""
-    
-    return f"""You are a Project Management Professional (PMP) expert. Provide theoretical foundation for this question based on PMBOK Guide and PMI standards.
+    return f"""You are a world-class PMP Instructor. 
+STRICT RULES:
+1. All technical PMP terms (e.g., 'Critical Path', 'Risk Register', 'Sprint Retrospective') MUST remain in English.
+2. Provide detailed explanations in {target_lang}.
+3. DO NOT repeat explanations if a term appears in both the question and options.
+4. Focus on the 'Why' and 'How' it's used in project management.
 
 Question: {question}
-
 Options:
 {options}
 
-{language_instruction}
+Format the response as follows:
+## Cơ sở lý thuyết các khái niệm
+- **[English Term]**: [Detailed explanation in {target_lang}]
+- **[English Term]**: [Detailed explanation...]
 
-IMPORTANT: Start directly with the theoretical content. Do NOT include any greetings, introductions, conclusions, or the formatting rules themselves.
+## Các công cụ và kỹ thuật (Tools & Techniques)
+- **[English Term]**: [Specific purpose and application in this context]
+"""
 
-{formatting_rules}
-
-Provide a comprehensive theoretical breakdown:
-
-{prompt_structure}
-
-Keep the theory organized and easy to reference (max 500 words)."""
-
-
-def get_explanation_prompt(question: str, options: str, correct_answer: str, language: str) -> str:
-    """Tạo prompt cho Explanation"""
-    language_instruction = 'Vui lòng trả lời bằng tiếng Việt.' if language == 'vi' else 'Please respond in English.'
+def get_explanation_prompt(question: str, options: str, correct_letter: str, language: str) -> str:
+    target_lang = "Tiếng Việt" if language == 'vi' else "English"
     
-    prompt_structure = f"""## Giải thích câu hỏi
+    # Trích xuất nội dung text của đáp án đúng để ép AI
+    correct_text = "N/A"
+    for line in options.split('\n'):
+        if line.startswith(f"{correct_letter}."):
+            correct_text = line.replace(f"{correct_letter}. ", "")
+            break
 
-Phân tích yêu cầu chính của câu hỏi, xác định các điểm mấu chốt cần chú ý theo PMBOK Guide.
-
-## Giải thích đáp án đúng
-
-Tại sao đáp án {correct_answer} là đúng? Giải thích chi tiết dựa trên các nguyên tắc và quy trình PMP.
-
-## Tại sao không chọn các đáp án khác
-
-Phân tích TỪNG đáp án sai một cách riêng biệt. Mỗi đáp án phải được giải thích trên một đoạn văn riêng theo định dạng:
-
-**Đáp án X:**
-[Giải thích tại sao đáp án này sai và không phù hợp với best practices của PMI]
-
-## Các lỗi thường gặp
-
-Liệt kê các lỗi mà thí sinh hay mắc phải khi làm dạng câu hỏi này.
-
-## Mẹo để nhớ
-
-Cung cấp các mẹo, tricks để áp dụng cho các câu hỏi tương tự trong kỳ thi PMP.
-
-QUAN TRỌNG: 
-- Khi đề cập đến các keywords hoặc concepts, viết chúng ở dạng **in đậm** KHÔNG CÓ dấu hai chấm (:) phía sau
-- Mỗi đáp án trong phần giải thích phải xuống dòng riêng biệt
-- Ví dụ: **Keyword** chứ không phải **Keyword:**""" if language == 'vi' else f"""## Question Analysis
-
-Analyze the main requirements of the question and identify the key points based on PMBOK Guide.
-
-## Correct Answer Explanation
-
-Why is answer {correct_answer} correct? Explain in detail based on PMP principles and processes.
-
-## Why Other Answers Are Wrong
-
-Analyze each incorrect answer and explain why they don't align with PMI best practices.
-
-## Common Mistakes
-
-List the mistakes students often make on this type of PMP question.
-
-## Tips to Remember
-
-Provide tips and tricks to apply to similar questions in the PMP exam.
-
-IMPORTANT: When mentioning keywords or concepts in content, write them in **bold** withOUT colons (:) after. Example: **Keyword** NOT **Keyword:**"""
-    
-    return f"""You are a Project Management Professional (PMP) expert. Analyze this PMP exam question based on PMBOK Guide and PMI standards.
+    return f"""You are a PMP Mentor. 
+STRICT RULES:
+1. The correct answer is {correct_letter}: "{correct_text}". You MUST justify this answer.
+2. Use {target_lang} for the explanation but KEEP technical terms in English.
+3. Provide a deep analysis of the situation (Lifecycle: Agile/Predictive/Hybrid).
 
 Question: {question}
-
 Options:
 {options}
 
-Correct Answer: {correct_answer}
+Format the response as follows:
+## Phân tích tình huống
+[Phân tích ngữ cảnh dự án, xác định vấn đề cốt lõi và giai đoạn của dự án.]
 
-{language_instruction}
+## Giải thích đáp án đúng ({correct_letter})
+[Giải thích tại sao "{correct_text}" là lựa chọn tốt nhất dựa trên PM Mindset và tiêu chuẩn PMI.]
 
-IMPORTANT: Start directly with the analysis. Do NOT include any greetings, introductions, or conclusions. Go straight to the structured content.
+## Tại sao các đáp án khác không phù hợp
+[Phân tích chi tiết từng phương án còn lại và lý do loại trừ chúng.]
 
-Do NOT use colons (:) after bold keywords. Write descriptions on the same line or new line without colons.
+## PMP Mindset
+[Một quy tắc vàng hoặc mẹo rút ra từ câu hỏi này.]
+"""
 
-Provide a comprehensive explanation:
+# --- 3. API & DATABASE COMMUNICATION ---
 
-{prompt_structure}
-
-Keep the explanation structured and easy to understand (max 600 words)."""
-
-
-def call_huggingface(prompt: str, max_retries: int = 3) -> Optional[str]:
-    """Gọi Hugging Face API với retry"""
+def call_huggingface(prompt: str) -> Optional[str]:
     client = InferenceClient(api_key=HUGGINGFACE_API_KEY)
-    
-    for attempt in range(max_retries):
-        try:
-            messages = [
-                {"role": "system", "content": "You are a helpful PMP expert assistant specializing in project management and PMBOK Guide."},
-                {"role": "user", "content": prompt}
-            ]
-            
-            response = client.chat_completion(
-                model=HF_MODEL,
-                messages=messages,
-                max_tokens=1500,
-                temperature=0.7
-            )
-            return response.choices[0].message.content
-            
-        except Exception as e:
-            error_str = str(e)
-            
-            # Log FULL error for debugging
-            if attempt == 0:  # Only log first attempt
-                print(f"\n      ⚠️ FULL ERROR: {error_str}\n")
-            
-            if '503' in error_str.lower() or 'loading' in error_str.lower():
-                if attempt < max_retries - 1:
-                    print(f"      ⏳ Model loading, waiting 10s...")
-                    time.sleep(10)
-                    continue
-            
-            if attempt < max_retries - 1:
-                time.sleep(2)
-                continue
-            
-            return None
-    
-    return None
-
-
-def get_cached_content(question_id: str, language: str, content_type: str) -> Optional[str]:
-    """Kiểm tra cache"""
     try:
-        url = f"{SUPABASE_URL}/rest/v1/pmp_ai_cache"
-        params = {
-            'question_id': f'eq.{question_id}',
-            'language': f'eq.{language}',
-            'type': f'eq.{content_type}',
-            'select': 'content'
-        }
-        
-        response = http_client.get(url, headers=HEADERS, params=params)
-        if response.status_code == 200:
-            data = response.json()
-            if data and len(data) > 0:
-                return data[0]['content']
-        return None
-    except:
+        messages = [
+            {"role": "system", "content": "You are a professional PMP tutor. You keep technical terms in English but explain in the requested language. You never use Chinese/Japanese characters."},
+            {"role": "user", "content": prompt}
+        ]
+        response = client.chat_completion(
+            model=HF_MODEL,
+            messages=messages,
+            max_tokens=2000,
+            temperature=0.1 # Thấp để đảm bảo tính logic và bám sát prompt
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        print(f"   ⚠️ API Error: {str(e)[:100]}...")
         return None
 
-
-def save_to_cache(question_id: str, language: str, content_type: str, content: str) -> bool:
-    """Lưu cache using UPSERT"""
-    try:
-        # Use UPSERT with on_conflict parameter
-        # The unique constraint is on (question_id, language, type)
-        url = f"{SUPABASE_URL}/rest/v1/pmp_ai_cache?on_conflict=question_id,language,type"
-        
-        data = {
-            'question_id': question_id,
-            'language': language,
-            'type': content_type,
-            'content': content
-        }
-        
-        # Use Prefer: resolution=merge-duplicates for UPSERT
-        upsert_headers = HEADERS.copy()
-        upsert_headers['Prefer'] = 'resolution=merge-duplicates,return=minimal'
-        
-        response = http_client.post(url, headers=upsert_headers, json=data)
-        
-        if response.status_code not in [200, 201, 204]:
-            print(f"      ⚠️ Save failed - Status: {response.status_code}, Response: {response.text[:200]}")
-            return False
-        return True
-    except Exception as e:
-        print(f"      ⚠️ Save exception: {e}")
-        return False
-
-
-def format_options(options: list) -> str:
-    """Format options"""
-    return '\n'.join([f"{chr(65+i)}. {opt}" for i, opt in enumerate(options)])
-
-
-def process_single_content(question: dict, language: str, content_type: str, force: bool) -> dict:
-    """Xử lý 1 loại content (theory hoặc explanation) cho 1 câu hỏi"""
-    question_id = question['id']
-    
-    try:
-        # Check cache
-        if not force and get_cached_content(question_id, language, content_type):
-            return {'id': question_id, 'type': content_type, 'status': 'cached'}
-        
-        # Generate content
-        question_text = question['question']
-        options = question['options']
-        correct_answer = question['correct_answer']
-        options_str = format_options(options)
-        
-        if content_type == 'theory':
-            prompt = get_theory_prompt(question_text, options_str, language)
-        else:
-            prompt = get_explanation_prompt(question_text, options_str, correct_answer, language)
-        
-        print(f"      🔄 Calling HF API for Q{question_id} ({content_type})...")
-        content = call_huggingface(prompt)
-        
-        if content:
-            if save_to_cache(question_id, language, content_type, content):
-                return {'id': question_id, 'type': content_type, 'status': 'success'}
-            else:
-                print(f"      ❌ Failed to save cache for Q{question_id} ({content_type})")
-                return {'id': question_id, 'type': content_type, 'status': 'save_failed'}
-        else:
-            print(f"      ❌ API returned None for Q{question_id} ({content_type})")
-            return {'id': question_id, 'type': content_type, 'status': 'api_failed'}
-    
-    except Exception as e:
-        print(f"      ❌ EXCEPTION in process_single_content: {e}")
-        import traceback
-        traceback.print_exc()
-        return {'id': question_id, 'type': content_type, 'status': 'exception', 'error': str(e)}
-
-
-def fetch_questions(start: int, end: int) -> list:
-    """Lấy câu hỏi từ Supabase"""
+def fetch_questions(start: int, end: int) -> List[Dict]:
     try:
         url = f"{SUPABASE_URL}/rest/v1/pmp_questions"
-        params = {'select': '*'}
-        
-        response = http_client.get(url, headers=HEADERS, params=params)
-        if response.status_code != 200:
-            return []
-        questions = response.json()
-        
-        def get_number(q):
-            num_str = ''.join(filter(str.isdigit, q.get('id', '')))
-            return int(num_str) if num_str else 0
-        
-        questions.sort(key=get_number)
-        
-        filtered = []
-        for q in questions:
-            num = get_number(q)
-            if start <= num <= end:
-                filtered.append(q)
-        return filtered
+        with httpx.Client() as client:
+            resp = client.get(url, headers=HEADERS, params={'select': '*'})
+            if resp.status_code != 200: 
+                print(f"❌ DB Error: {resp.text}")
+                return []
+            
+            data = resp.json()
+            # Hàm trích xuất số từ ID (VD: "Q1" -> 1)
+            def extract_num(q):
+                num_part = ''.join(filter(str.isdigit, str(q.get('id', ''))))
+                return int(num_part) if num_part else 0
+            
+            data.sort(key=extract_num)
+            return [q for q in data if start <= extract_num(q) <= end]
     except Exception as e:
-        print(f"❌ Error fetching questions: {e}")
+        print(f"❌ Fetch Error: {e}")
         return []
 
+def save_to_cache(q_id: str, lang: str, c_type: str, content: str):
+    url = f"{SUPABASE_URL}/rest/v1/pmp_ai_cache"
+    with httpx.Client() as client:
+        # Xóa bản ghi cũ nếu có (upsert logic)
+        client.delete(url, headers=HEADERS, params={'question_id': f'eq.{q_id}', 'language': f'eq.{lang}', 'type': f'eq.{c_type}'})
+        # Ghi mới
+        payload = {'question_id': q_id, 'language': lang, 'type': c_type, 'content': content}
+        client.post(url, headers=HEADERS, json=payload)
+
+def get_cached_content(q_id: str, lang: str, c_type: str) -> Optional[str]:
+    url = f"{SUPABASE_URL}/rest/v1/pmp_ai_cache"
+    params = {'question_id': f'eq.{q_id}', 'language': f'eq.{lang}', 'type': f'eq.{c_type}', 'select': 'content'}
+    with httpx.Client() as client:
+        r = client.get(url, headers=HEADERS, params=params)
+        return r.json()[0]['content'] if r.status_code == 200 and r.json() else None
+
+# --- 4. EXECUTION ---
 
 def main():
-    parser = argparse.ArgumentParser(description='Fast PMP AI Cache Builder (Parallel)')
-    parser.add_argument('range', help='Range câu hỏi (VD: 1-100)')
-    parser.add_argument('--lang', default='vi', choices=['vi', 'en'], help='Ngôn ngữ')
-    parser.add_argument('--type', choices=['theory', 'explanation'], help='Loại nội dung')
+    parser = argparse.ArgumentParser(description='PMP AI Cache Builder Professional')
+    parser.add_argument('range', help='Range câu hỏi (VD: 1-50)')
+    parser.add_argument('--lang', default='vi', choices=['vi', 'en'])
     parser.add_argument('--force', action='store_true', help='Ghi đè cache cũ')
-    parser.add_argument('--workers', type=int, default=5, help='Số workers song song (default: 5)')
-    
     args = parser.parse_args()
-    
+
     try:
         start, end = map(int, args.range.split('-'))
     except ValueError:
-        print("❌ Invalid range format. Use: start-end (e.g., 1-100)")
-        sys.exit(1)
-    
-    print(f"\n╔══════════════════════════════════════════════════════════════╗")
-    print(f"║      Fast PMP AI Cache Builder (Parallel Processing)        ║")
-    print(f"╠══════════════════════════════════════════════════════════════╣")
-    print(f"║  Range: {start} - {end}")
-    print(f"║  Language: {'Tiếng Việt' if args.lang == 'vi' else 'English'}")
-    print(f"║  Workers: {args.workers} (parallel)")
-    print(f"║  Model: {HF_MODEL}")
-    print(f"╚══════════════════════════════════════════════════════════════╝\n")
-    
-    print(f"📚 Đang lấy câu hỏi từ {start} đến {end}...")
-    questions = fetch_questions(start, end)
-    print(f"✅ Tìm thấy {len(questions)} câu hỏi\n")
-    
-    if not questions:
-        print("❌ Không tìm thấy câu hỏi nào!")
+        print("❌ Định dạng range sai. Ví dụ: 1-10")
         return
-    
-    content_types = [args.type] if args.type else ['theory', 'explanation']
-    
-    # Tạo danh sách tasks
-    tasks = []
-    for q in questions:
-        for content_type in content_types:
-            tasks.append((q, args.lang, content_type, args.force))
-    
-    total_tasks = len(tasks)
-    print(f"🚀 Bắt đầu xử lý {total_tasks} tasks với {args.workers} workers...\n")
-    
-    # Statistics
-    stats = {'cached': 0, 'success': 0, 'failed': 0}
-    start_time = time.time()
-    
-    # Process in parallel
-    with ThreadPoolExecutor(max_workers=args.workers) as executor:
-        futures = {
-            executor.submit(process_single_content, q, lang, ctype, force): (q['id'], ctype)
-            for q, lang, ctype, force in tasks
-        }
-        
-        completed = 0
-        for future in as_completed(futures):
-            completed += 1
-            q_id, ctype = futures[future]
-            
-            try:
-                result = future.result()
-                status = result['status']
-                
-                if status == 'cached':
-                    stats['cached'] += 1
-                    icon = '✓'
-                elif status == 'success':
-                    stats['success'] += 1
-                    icon = '✅'
-                else:
-                    stats['failed'] += 1
-                    icon = '❌'
-                
-                # Progress
-                progress = (completed / total_tasks) * 100
-                elapsed = time.time() - start_time
-                eta = (elapsed / completed) * (total_tasks - completed) if completed > 0 else 0
-                
-                print(f"[{completed}/{total_tasks}] {icon} Q{q_id} ({ctype}) - {progress:.1f}% | ETA: {eta/60:.1f}m")
-                
-            except Exception as e:
-                stats['failed'] += 1
-                print(f"[{completed}/{total_tasks}] ❌ Q{q_id} ({ctype}) - Error: {e}")
-    
-    # Summary
-    elapsed = time.time() - start_time
-    print(f"\n╔══════════════════════════════════════════════════════════════╗")
-    print(f"║                      SUMMARY                                 ║")
-    print(f"╠══════════════════════════════════════════════════════════════╣")
-    print(f"║  Total tasks: {total_tasks}")
-    print(f"║  ✅ Success: {stats['success']}")
-    print(f"║  ✓ Cached: {stats['cached']}")
-    print(f"║  ❌ Failed: {stats['failed']}")
-    print(f"║  ⏱️  Time: {elapsed/60:.1f} minutes")
-    print(f"║  ⚡ Speed: {total_tasks/(elapsed/60):.1f} tasks/minute")
-    print(f"╚══════════════════════════════════════════════════════════════╝\n")
-    
-    http_client.close()
 
+    print(f"\n{'='*60}")
+    print(f"🚀 PMP AI BUILDER PRO: {start} -> {end} ({args.lang.upper()})")
+    print(f"🤖 Model: {HF_MODEL}")
+    print(f"{'='*60}\n")
+
+    questions = fetch_questions(start, end)
+    if not questions:
+        print("⚠️ Không tìm thấy câu hỏi nào.")
+        return
+
+    for idx, q in enumerate(questions):
+        q_id = q['id']
+        correct_letter = q.get('correct_answer', 'A')
+        print(f"[{idx+1}/{len(questions)}] Processing ID: {q_id} (Answer: {correct_letter})...")
+        
+        # Parse options: Database lưu dạng '["A...","B..."]' (string JSON)
+        try:
+            raw_options = q.get('options', [])
+            if isinstance(raw_options, str):
+                options_list = json.loads(raw_options)
+            else:
+                options_list = raw_options
+        except Exception:
+            options_list = []
+
+        # Làm sạch options: loại bỏ prefix 'A. ' nếu có để format lại đồng nhất
+        clean_options = []
+        for i, opt in enumerate(options_list):
+            prefix = f"{chr(65+i)}. "
+            content = opt.replace(prefix, "") if opt.startswith(prefix) else opt
+            clean_options.append(f"{chr(65+i)}. {content}")
+        
+        options_str = '\n'.join(clean_options)
+        
+        for c_type in ['theory', 'explanation']:
+            if not args.force:
+                if get_cached_content(q_id, args.lang, c_type):
+                    print(f"   - {c_type.capitalize()}: Skipped (Exists)")
+                    continue
+
+            print(f"   - {c_type.capitalize()}: Generating...", end="", flush=True)
+            
+            if c_type == 'theory':
+                prompt = get_theory_prompt(q['question'], options_str, args.lang)
+            else:
+                prompt = get_explanation_prompt(q['question'], options_str, correct_letter, args.lang)
+            
+            result = call_huggingface(prompt)
+            if result:
+                save_to_cache(q_id, args.lang, c_type, result)
+                print(" ✅ Done.")
+            else:
+                print(" ❌ Failed.")
+            
+            time.sleep(1) # Tránh rate limit API
+
+    print(f"\n🎉 Finished! Range {args.range} is ready.")
 
 if __name__ == "__main__":
     main()

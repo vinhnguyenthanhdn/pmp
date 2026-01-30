@@ -46,8 +46,8 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
 
     // Sort groups by latest submission time
     const sortedGroups = Object.entries(groupedSubmissions).sort(([, aSubs], [, bSubs]) => {
-        const aLatest = new Date(aSubs[0].created_at).getTime();
-        const bLatest = new Date(bSubs[0].created_at).getTime();
+        const aLatest = new Date(aSubs[0].submitted_at).getTime();
+        const bLatest = new Date(bSubs[0].submitted_at).getTime();
         return bLatest - aLatest;
     });
 
@@ -125,7 +125,7 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
 
                             <div className="submissions-list">
                                 {groupSubs.map((sub, idx) => {
-                                    const submissionDate = new Date(sub.created_at);
+                                    const submissionDate = new Date(sub.submitted_at);
                                     const formattedDate = submissionDate.toLocaleDateString('en-US', {
                                         month: 'short',
                                         day: 'numeric',
@@ -145,7 +145,7 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
                                                     {sub.is_correct ? 'CORRECT' : 'INCORRECT'}
                                                 </span>
                                                 <span className="answer-text">
-                                                    You chose: <strong>{sub.answer}</strong>
+                                                    You chose: <strong>{sub.user_answer}</strong>
                                                 </span>
                                             </div>
 

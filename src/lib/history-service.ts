@@ -15,9 +15,9 @@ export async function saveUserSubmission(
             .insert({
                 user_id: userId,
                 question_id: questionId,
-                answer: answer,
+                user_answer: answer,
                 is_correct: isCorrect,
-                created_at: new Date().toISOString(),
+                submitted_at: new Date().toISOString(),
             });
 
         if (error) throw error;
@@ -32,7 +32,7 @@ export async function getUserSubmissions(userId: string): Promise<UserSubmission
             .from(TABLE_NAME)
             .select('*')
             .eq('user_id', userId)
-            .order('created_at', { ascending: false });
+            .order('submitted_at', { ascending: false });
 
         if (error) throw error;
 

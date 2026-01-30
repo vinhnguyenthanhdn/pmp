@@ -34,8 +34,8 @@ export interface AppState {
 export interface UserSubmission {
     id: string;
     question_id: string;
-    answer: string;
+    user_answer: string;
     is_correct: boolean;
-    created_at: string;
+    submitted_at: string;
     question?: Question; // Optional for joining data
 }
