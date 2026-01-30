@@ -36,6 +36,7 @@
     "vite-plugin-pwa": "^1.2.0"
   },
   "dependencies": {
+    "@huggingface/inference": "^4.13.11",
     "@supabase/supabase-js": "^2.90.1",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",

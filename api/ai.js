@@ -1,11 +1,10 @@
-// JavaScript serverless function for Vercel
-// Vercel handles compilation for JS/TS in /api easily.
-// Make sure to select Node.js 18.x+ in Vercel settings.
+import { HfInference } from "@huggingface/inference";
 
 const HUGGINGFACE_API_KEY = process.env.HUGGINGFACE_API_KEY || process.env.VITE_HUGGINGFACE_API_KEY || '';
 const HF_MODEL = process.env.HF_MODEL || process.env.VITE_HF_MODEL || "meta-llama/Llama-3.1-70B-Instruct";
-// OpenAI-compatible endpoint via Router (REQUIRED due to deprecation of api-inference)
-const HF_API_URL = "https://router.huggingface.co/hf-inference/v1/chat/completions";
+
+// Initialize Hugging Face client
+const hf = new HfInference(HUGGINGFACE_API_KEY);
 
 export default async function handler(req, res) {
     // 1. CORS Headers
@@ -41,50 +40,27 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'Invalid request body' });
         }
 
-        console.log(`[API] Calling external HF API: ${HF_API_URL}`);
+        console.log('[API] Calling Hugging Face Inference API via Library...');
 
-        // Native fetch (Node 18+)
-        const response = await fetch(HF_API_URL, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${HUGGINGFACE_API_KEY}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                model: HF_MODEL,
-                messages,
-                max_tokens,
-                temperature
-            })
+        // Use official library to handle requests (automatic endpoint routing)
+        const response = await hf.chatCompletion({
+            model: HF_MODEL,
+            messages: messages,
+            max_tokens: max_tokens,
+            temperature: temperature
         });
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error(`[API] HF Error ${response.status}:`, errorText);
-
-            if (response.status === 429 || response.status === 503) {
-                return res.status(503).json({ error: 'AI_SERVICE_UNAVAILABLE', details: errorText });
-            }
-
-            return res.status(response.status).json({
-                error: 'Upstream API Error',
-                details: errorText
-            });
-        }
-
-        const data = await response.json();
-
-        if (!data.choices || data.choices.length === 0) {
-            return res.status(500).json({ error: 'No content generated' });
-        }
-
-        return res.status(200).json(data);
+        console.log('[API] Success');
+        return res.status(200).json(response);
 
     } catch (error) {
         console.error('[API] Internal Error:', error);
+
+        // Return detailed error
         return res.status(500).json({
-            error: 'Internal Server Error',
-            message: error.message
+            error: 'AI Service Error',
+            message: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
     }
 }
