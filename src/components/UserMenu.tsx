@@ -58,6 +58,11 @@ export const UserMenu: React.FC<UserMenuProps> = ({
             {isOpen && <div className="menu-overlay" onClick={closeMenu}></div>}
 
             <button className="user-avatar-btn" onClick={toggleMenu} title="User Menu">
+                <div className="user-info-text">
+                    <span className="user-name-display">
+                        {user.user_metadata?.full_name || user.email?.split('@')[0]}
+                    </span>
+                </div>
                 {avatarUrl ? (
                     <img src={avatarUrl} alt="User" />
                 ) : (
