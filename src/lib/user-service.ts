@@ -95,13 +95,16 @@ export async function getAllUsers(): Promise<UserProfile[]> {
 
 export async function updateUserStatus(userId: string, isApproved: boolean): Promise<boolean> {
     try {
-        const { error } = await supabase
+        const { data, error } = await supabase
             .from('profiles')
             .update({ is_approved: isApproved })
-            .eq('id', userId);
+            .eq('id', userId)
+            .select();
 
         if (error) throw error;
-        return true;
+
+        // Return true only if a row was actually updated
+        return data && data.length > 0;
     } catch (error) {
         console.error('Error updating user status:', error);
         return false;
@@ -110,13 +113,16 @@ export async function updateUserStatus(userId: string, isApproved: boolean): Pro
 
 export async function updateUserRole(userId: string, role: string): Promise<boolean> {
     try {
-        const { error } = await supabase
+        const { data, error } = await supabase
             .from('profiles')
             .update({ role: role })
-            .eq('id', userId);
+            .eq('id', userId)
+            .select();
 
         if (error) throw error;
-        return true;
+
+        // Return true only if a row was actually updated
+        return data && data.length > 0;
     } catch (error) {
         console.error('Error updating user role:', error);
         return false;

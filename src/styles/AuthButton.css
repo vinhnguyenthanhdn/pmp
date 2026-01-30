@@ -1,7 +1,5 @@
 .auth-container {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
+    /* Removed absolute position - handled by header-controls */
     display: flex;
     align-items: center;
     gap: var(--space-md);
@@ -53,13 +51,7 @@
 
 @media (max-width: 768px) {
     .auth-container {
-        position: relative;
-        top: auto;
-        right: auto;
-        justify-content: center;
-        margin-bottom: var(--space-md);
-        width: 100%;
-        flex-direction: column;
+        /* Removed mobile overrides as they are handled by parent flex/order */
         gap: var(--space-xs);
     }
 }

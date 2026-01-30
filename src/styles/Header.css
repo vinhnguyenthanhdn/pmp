@@ -35,11 +35,27 @@
     margin: 0;
 }
 
-.history-actions {
+/* New wrapper for Auth & History */
+.header-controls {
     position: absolute;
     top: 1rem;
-    left: 1rem;
-    z-index: 100;
+    left: 0;
+    right: 0;
+    padding: 0 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    pointer-events: none;
+    /* Let clicks pass through empty space */
+}
+
+/* Re-enable pointer events for the children */
+.header-controls>* {
+    pointer-events: auto;
+}
+
+.history-actions {
+    /* Position handled by header-controls now */
     display: flex;
     align-items: center;
 }
@@ -76,39 +92,40 @@
 
 @media (max-width: 768px) {
     .app-header {
-        padding: var(--space-xl) 0;
+        padding: var(--space-lg) 0;
     }
 
-    .header-actions {
-        position: static;
-        margin-top: var(--space-md);
-        transform: none;
-        justify-content: center;
+    .header-content {
+        display: flex;
+        flex-direction: column;
     }
 
+    /* Order 1: Title */
     .app-title {
+        order: 1;
         font-size: 1.75rem;
         display: flex;
         flex-direction: column;
-        gap: var(--space-sm);
+        gap: 0;
+        margin-bottom: var(--space-sm);
     }
 
-    .title-icon {
-        font-size: 2rem;
-    }
-
-    .app-subtitle {
-        font-size: 1rem;
-    }
-
-    .history-actions {
-        position: relative;
-        top: auto;
-        left: auto;
+    /* Order 2: Controls (Auth + History) */
+    .header-controls {
+        position: static;
+        order: 2;
+        padding: 0;
+        margin-top: var(--space-md);
         justify-content: center;
-        margin-bottom: var(--space-md);
-        display: flex;
-        /* Ensure flex is kept */
         width: 100%;
+        gap: var(--space-sm);
+        flex-wrap: wrap;
+    }
+
+    /* Order 3: Language Selector */
+    /* Target the div rendered by the component */
+    .header-content>.language-selector {
+        order: 3;
+        margin-top: var(--space-sm);
     }
 }
