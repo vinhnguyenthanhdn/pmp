@@ -52,9 +52,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
             <div className="admin-header">
                 <h1 className="admin-title">User Management</h1>
                 {onBack && (
-                    <button className="btn-secondary" onClick={onBack}>
-                        Back to Quiz
-                    </button>
+                    <div style={{ display: 'none' }}></div>
                 )}
             </div>
 

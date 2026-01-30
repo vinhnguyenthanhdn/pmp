@@ -37,9 +37,8 @@ export const Header: React.FC<HeaderProps> = ({
                                 <button
                                     className={`btn-history ${isAdminView ? 'active' : ''}`}
                                     onClick={onAdminClick}
-                                    style={{ backgroundColor: isAdminView ? 'var(--primary-color)' : 'transparent', border: '1px solid var(--border-color)' }}
                                 >
-                                    Admin
+                                    {isAdminView ? 'Back to Quiz' : 'Admin'}
                                 </button>
                             )}
 
