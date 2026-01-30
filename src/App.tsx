@@ -34,7 +34,11 @@ function App() {
     const [userRole, setUserRole] = useState<string>('user');
     const [isRestoringProgress, setIsRestoringProgress] = useState(true);
     const [pendingSavedIndex, setPendingSavedIndex] = useState<number | null>(null);
-    const [view, setView] = useState<'quiz' | 'history' | 'admin'>('quiz');
+    const [view, setView] = useState<'quiz' | 'history' | 'admin'>(() => {
+        const params = new URLSearchParams(window.location.search);
+        const v = params.get('view');
+        return (v === 'history' || v === 'admin') ? v : 'quiz';
+    });
 
     // Load questions on mount
     useEffect(() => {
@@ -234,8 +238,8 @@ function App() {
 
     // Update URL & Save Progress when index changes
     // Update URL when index changes
+    // Sync URL with state (view and question index)
     useEffect(() => {
-        // Don't update URL if we are still determining start index
         if (isRestoringProgress || loading) return;
 
         // Avoid overwriting URL if Auth flow is active
@@ -247,17 +251,25 @@ function App() {
 
         const params = new URLSearchParams(window.location.search);
         params.set('q', String(currentIndex + 1));
+
+        if (view === 'quiz') {
+            params.delete('view');
+        } else {
+            params.set('view', view);
+        }
+
         window.history.replaceState({}, '', `?${params.toString()}`);
+    }, [currentIndex, view, isRestoringProgress, loading]);
+
+    // Handle side effects when question changes
+    useEffect(() => {
+        if (isRestoringProgress || loading) return;
 
         // Scroll to top
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
         // Reset AI section when changing questions
         setActiveAISection(null);
-
-        // NOTE: We do NOT auto-save progress here anymore. 
-        // We only save when user explicitly Navigates (Next/Prev/Jump) or Submits.
-        // This prevents overwriting history when just visiting a link.
     }, [currentIndex, isRestoringProgress, loading]);
 
     // Save answers to localStorage
