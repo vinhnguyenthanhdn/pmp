@@ -8,11 +8,13 @@ import { Navigation } from './components/Navigation';
 import { Loading } from './components/Loading';
 import { supabase } from './lib/supabase';
 import { getAIExplanation, getAITheory } from './lib/ai-service';
-import { saveUserProgress, getUserProgress, checkUserApprovalStatus } from './lib/user-service';
+import { saveUserProgress, getUserProgress } from './lib/user-service';
 import { saveUserSubmission } from './lib/history-service';
 import { HistoryPage } from './components/HistoryPage';
 import { LoginRequired } from './components/LoginRequired';
 import { PendingApproval } from './components/PendingApproval';
+import { AdminPage } from './components/AdminPage';
+import { getUserProfile } from './lib/user-service';
 import type { User } from '@supabase/supabase-js';
 import type { Question, Language } from './types';
 import './styles/App.css';
@@ -29,9 +31,10 @@ function App() {
     const [aiContent, setAiContent] = useState<Record<string, string>>({});
     const [user, setUser] = useState<User | null>(null);
     const [isApproved, setIsApproved] = useState(false);
+    const [userRole, setUserRole] = useState<string>('user');
     const [isRestoringProgress, setIsRestoringProgress] = useState(true);
     const [pendingSavedIndex, setPendingSavedIndex] = useState<number | null>(null);
-    const [view, setView] = useState<'quiz' | 'history'>('quiz');
+    const [view, setView] = useState<'quiz' | 'history' | 'admin'>('quiz');
 
     // Load questions on mount
     useEffect(() => {
@@ -138,9 +141,13 @@ function App() {
             setUser(session?.user ?? null);
 
             if (session?.user) {
-                // Check approval status first
-                const approved = await checkUserApprovalStatus(session.user.id);
+                // Check approval status and role first
+                const profile = await getUserProfile(session.user.id);
+                const approved = profile?.is_approved ?? false;
+                const role = profile?.role ?? 'user';
+
                 setIsApproved(approved);
+                setUserRole(role);
 
                 if (approved) {
                     const savedIndex = await getUserProgress(session.user.id);
@@ -168,6 +175,7 @@ function App() {
             if (event === 'SIGNED_OUT') {
                 setUser(null);
                 setIsApproved(false);
+                setUserRole('user');
                 setAiContent({});
                 setUserAnswers({});
                 setView('quiz');
@@ -436,10 +444,15 @@ function App() {
                 onHistoryClick={() => setView(v => v === 'quiz' ? 'history' : 'quiz')}
                 isHistoryView={view === 'history'}
                 user={user}
+                isAdmin={userRole === 'admin'}
+                onAdminClick={() => setView(v => v === 'admin' ? 'quiz' : 'admin')}
+                isAdminView={view === 'admin'}
             />
 
             <main className="container">
-                {view === 'history' && user ? (
+                {view === 'admin' && user && userRole === 'admin' ? (
+                    <AdminPage onBack={() => setView('quiz')} />
+                ) : view === 'history' && user ? (
                     <HistoryPage
                         userId={user.id}
                         questions={questions}

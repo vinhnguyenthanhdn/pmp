@@ -10,6 +10,9 @@ interface HeaderProps {
     onHistoryClick?: () => void;
     isHistoryView?: boolean;
     user?: any;
+    isAdmin?: boolean;
+    onAdminClick?: () => void;
+    isAdminView?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -17,7 +20,10 @@ export const Header: React.FC<HeaderProps> = ({
     onLanguageChange,
     onHistoryClick,
     isHistoryView,
-    user
+    user,
+    isAdmin,
+    onAdminClick,
+    isAdminView
 }) => {
     return (
         <header className="app-header">
@@ -26,7 +32,17 @@ export const Header: React.FC<HeaderProps> = ({
                     <AuthButton currentLanguage={currentLanguage} />
 
                     {user && onHistoryClick && (
-                        <div className="history-actions">
+                        <div className="history-actions" style={{ display: 'flex', gap: '10px' }}>
+                            {isAdmin && (
+                                <button
+                                    className={`btn-history ${isAdminView ? 'active' : ''}`}
+                                    onClick={onAdminClick}
+                                    style={{ backgroundColor: isAdminView ? 'var(--primary-color)' : 'transparent', border: '1px solid var(--border-color)' }}
+                                >
+                                    Admin
+                                </button>
+                            )}
+
                             <button
                                 className={`btn-history ${isHistoryView ? 'active' : ''}`}
                                 onClick={onHistoryClick}

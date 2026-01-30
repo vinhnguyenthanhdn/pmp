@@ -1,5 +1,13 @@
 import { supabase } from './supabase';
 
+export interface UserProfile {
+    id: string;
+    email: string;
+    is_approved: boolean;
+    role: string;
+    created_at?: string;
+}
+
 export async function saveUserProgress(userId: string, index: number) {
     try {
         const { error } = await supabase
@@ -41,20 +49,76 @@ export async function getUserProgress(userId: string): Promise<number | null> {
 
 export async function checkUserApprovalStatus(userId: string): Promise<boolean> {
     try {
+        const profile = await getUserProfile(userId);
+        return profile?.is_approved ?? false;
+    } catch (error) {
+        console.error('Error checking approval status:', error);
+        return false;
+    }
+}
+
+export async function getUserProfile(userId: string): Promise<UserProfile | null> {
+    try {
         const { data, error } = await supabase
             .from('profiles')
-            .select('is_approved')
+            .select('*')
             .eq('id', userId)
             .single();
 
         if (error) {
-            console.warn('Profile not found, defaulting to false approval', error);
-            return false;
+            console.warn('Profile not found', error);
+            return null;
         }
 
-        return data?.is_approved ?? false;
+        return data as UserProfile;
     } catch (error) {
-        console.error('Error checking approval status:', error);
+        console.error('Error getting user profile:', error);
+        return null;
+    }
+}
+
+export async function getAllUsers(): Promise<UserProfile[]> {
+    try {
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        return data as UserProfile[];
+    } catch (error) {
+        console.error('Error getting all users:', error);
+        return [];
+    }
+}
+
+export async function updateUserStatus(userId: string, isApproved: boolean): Promise<boolean> {
+    try {
+        const { error } = await supabase
+            .from('profiles')
+            .update({ is_approved: isApproved })
+            .eq('id', userId);
+
+        if (error) throw error;
+        return true;
+    } catch (error) {
+        console.error('Error updating user status:', error);
+        return false;
+    }
+}
+
+export async function updateUserRole(userId: string, role: string): Promise<boolean> {
+    try {
+        const { error } = await supabase
+            .from('profiles')
+            .update({ role: role })
+            .eq('id', userId);
+
+        if (error) throw error;
+        return true;
+    } catch (error) {
+        console.error('Error updating user role:', error);
         return false;
     }
 }
