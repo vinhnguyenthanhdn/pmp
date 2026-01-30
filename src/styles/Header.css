@@ -140,19 +140,20 @@
         width: 100%;
     }
 
-    /* 3. Controls (Buttons) */
+    /* 3. Controls (Buttons/Icon) */
     .header-controls {
-        order: 3;
-        position: static;
-        /* Back to flow */
-        width: 100%;
-        justify-content: center;
-        gap: var(--space-md);
-        flex-wrap: wrap;
-        margin: 0;
+        /* Keep absolute positioning even on mobile to stay in corner */
+        position: absolute;
+        top: 0.5rem;
+        right: 1rem;
+        width: auto;
+        justify-content: flex-end;
+        pointer-events: none;
+        z-index: 20;
+    }
+
+    .header-controls>* {
         pointer-events: auto;
-        /* Ensure clickable */
-        top: auto;
     }
 
     /* 4. Language Selector */
